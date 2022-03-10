@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 
-from functools import reduce
-from google.api import metric_pb2 as ga_metric
-from google.api import label_pb2 as ga_label
-from googleapiclient.discovery import build as google_api
-from google.cloud.monitoring_v3 import MetricServiceClient
-from google.cloud.monitoring_v3 import TimeSeries, TimeInterval, Point
-import json
-from os import environ
-import psutil as ps
-import requests
-from signal import signal, SIGTERM
-from time import sleep, time
 import json
 import logging
+from functools import reduce
+from os import environ
+from signal import SIGTERM, signal
+from time import sleep, time
+
+import psutil as ps
+import requests
+from google.api import label_pb2 as ga_label
+from google.api import metric_pb2 as ga_metric
+from google.cloud.monitoring_v3 import (
+    MetricServiceClient,
+    Point,
+    TimeInterval,
+    TimeSeries,
+)
+from googleapiclient.discovery import build as google_api
 
 compute = google_api("compute", "v1")
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 def get_machine_info():
@@ -79,7 +85,7 @@ def get_machine_hour(machine, pricelist):
         memory_key = get_price_key("CUSTOM-VM-RAM", machine["preemptible"])
         return (
             pricelist[core_key][machine["region"]] * int(core)
-            + pricelist[memory_key][machine["region"]] * int(memory) / 2**10
+            + pricelist[memory_key][machine["region"]] * int(memory) / 2 ** 10
         )
     else:
         price_key = get_price_key(
@@ -110,7 +116,8 @@ def get_disk_hour(machine, pricelist):
 def reset():
     global memory_used, disk_used, disk_reads, disk_writes, last_time
 
-    # Explicitly reset the CPU counter, because the first call of this method always reports 0
+    # Explicitly reset the CPU counter
+    # because the first call of this method always reports 0
     ps.cpu_percent()
 
     memory_used = 0
@@ -149,7 +156,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2**30, 1)
+    return "%.1f" % round(value_bytes / 2 ** 30, 1)
 
 
 def get_metric(key, value_type, unit, description):
@@ -227,7 +234,7 @@ def report():
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
 
 
-### Define constants
+# Define constants
 
 # Cromwell variables passed to the container
 # through environmental variables
@@ -346,7 +353,7 @@ COST_ESTIMATE_METRIC = get_metric(
     "Cumulative runtime cost estimate for a Cromwell task call",
 )
 
-### Detect container termination
+# Detect container termination
 
 
 def signal_handler(signum, frame):
@@ -357,7 +364,7 @@ def signal_handler(signum, frame):
 running = True
 signal(SIGTERM, signal_handler)
 
-### Main loop
+# Main loop
 #
 # It continuously measures runtime metrics every MEASUREMENT_TIME_SEC,
 # and reports them to Stackdriver Monitoring API every REPORT_TIME_SEC.
