@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 
-from functools import reduce
-from google.api import metric_pb2 as ga_metric
-from google.api import label_pb2 as ga_label
-from googleapiclient.discovery import build as google_api
-from google.cloud.monitoring_v3 import MetricServiceClient
-from google.cloud.monitoring_v3 import TimeSeries, TimeInterval, Point
-import json
-from os import environ
-import psutil as ps
-import requests
-from signal import signal, SIGTERM
-from time import sleep, time
 import json
 import logging
+from functools import reduce
+from os import environ
+from signal import SIGTERM, signal
+from time import sleep, time
+
+import psutil as ps
+import requests
+from google.api import label_pb2 as ga_label
+from google.api import metric_pb2 as ga_metric
+from google.cloud.monitoring_v3 import (
+    MetricServiceClient,
+    Point,
+    TimeInterval,
+    TimeSeries,
+)
+from googleapiclient.discovery import build as google_api
 
 compute = google_api("compute", "v1")
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 def get_machine_info():
@@ -32,7 +38,7 @@ def get_machine_info():
 
     disks = [get_disk(project, zone, disk) for disk in instance["disks"]]
 
-    return {
+    machine_info = {
         "project": project,
         "zone": zone,
         "region": zone[:-2],
@@ -41,6 +47,14 @@ def get_machine_info():
         "preemptible": instance["scheduling"]["preemptible"],
         "disks": disks,
     }
+
+    if "owner" in instance["labels"].keys():
+        machine_info.update({"owner_label": instance["labels"]["owner"]})
+
+    if "entrance-wdl" in instance["labels"].keys():
+        machine_info.update({"entrance_wdl_label": instance["labels"]["entrance-wdl"]})
+
+    return machine_info
 
 
 def get_disk(project, zone, disk):
@@ -79,7 +93,7 @@ def get_machine_hour(machine, pricelist):
         memory_key = get_price_key("CUSTOM-VM-RAM", machine["preemptible"])
         return (
             pricelist[core_key][machine["region"]] * int(core)
-            + pricelist[memory_key][machine["region"]] * int(memory) / 2**10
+            + pricelist[memory_key][machine["region"]] * int(memory) / 2 ** 10
         )
     else:
         price_key = get_price_key(
@@ -110,7 +124,8 @@ def get_disk_hour(machine, pricelist):
 def reset():
     global memory_used, disk_used, disk_reads, disk_writes, last_time
 
-    # Explicitly reset the CPU counter, because the first call of this method always reports 0
+    # Explicitly reset the CPU counter
+    # because the first call of this method always reports 0
     ps.cpu_percent()
 
     memory_used = 0
@@ -127,7 +142,7 @@ def measure():
 
     memory_used = max(memory_used, MEMORY_SIZE - mem_usage("available"))
     disk_used = max(disk_used, disk_usage("used"))
-    logging.info("VM memory used: ", memory_used)
+    logging.info("VM memory used: %s", memory_used)
 
     sleep(MEASUREMENT_TIME_SEC)
 
@@ -149,7 +164,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2**30, 1)
+    return "%.1f" % round(value_bytes / 2 ** 30, 1)
 
 
 def get_metric(key, value_type, unit, description):
@@ -184,6 +199,10 @@ def get_time_series(metric_descriptor, value):
     labels["mem_size"] = MEMORY_SIZE_LABEL
     labels["disk_size"] = DISK_SIZE_LABEL
     labels["preemptible"] = PREEMPTIBLE_LABEL
+    if OWNER_LABEL:
+        labels["owner_label"] = OWNER_LABEL
+    if ENTRANCE_WDL_LABEL:
+        labels["entrance_wdl_label"] = ENTRANCE_WDL_LABEL
 
     series.resource.type = "gce_instance"
     series.resource.labels["zone"] = MACHINE["zone"]
@@ -227,7 +246,7 @@ def report():
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
 
 
-### Define constants
+# Define constants
 
 # Cromwell variables passed to the container
 # through environmental variables
@@ -241,6 +260,7 @@ TASK_CALL_ATTEMPT = environ[
 ]  # this variable is the number of retry ie. 0, 1, 2, etc
 DISK_MOUNTS = environ["DISK_MOUNTS"].split()
 
+
 # Get billing rates
 MACHINE = get_machine_info()
 PRICELIST = get_pricelist()
@@ -248,9 +268,15 @@ COST_PER_SEC = (
     get_machine_hour(MACHINE, PRICELIST) + get_disk_hour(MACHINE, PRICELIST)
 ) / 3600
 
+# Get VectorHive2 related labels
+OWNER_LABEL = MACHINE["owner_label"] if "owner_label" in MACHINE.keys() else ""
+ENTRANCE_WDL_LABEL = (
+    MACHINE["entrance_wdl_label"] if "entrance_wdl_label" in MACHINE.keys() else ""
+)
+
 client = MetricServiceClient()
 PROJECT_NAME = client.common_project_path(MACHINE["project"])
-print("project name: ", PROJECT_NAME)
+logging.info("project name: %s", PROJECT_NAME)
 
 METRIC_ROOT = "wdl_task"
 
@@ -290,6 +316,14 @@ LABEL_DESCRIPTORS = [
     ga_label.LabelDescriptor(
         key="preemptible",
         description="Preemptible flag",
+    ),
+    ga_label.LabelDescriptor(
+        key="owner_label",
+        description="Owner Label defined by user in VectorHive2",
+    ),
+    ga_label.LabelDescriptor(
+        key="entrance_wdl_label",
+        description="Entrance WDL Label defined by VectorHive2",
     ),
 ]
 
@@ -346,7 +380,7 @@ COST_ESTIMATE_METRIC = get_metric(
     "Cumulative runtime cost estimate for a Cromwell task call",
 )
 
-### Detect container termination
+# Detect container termination
 
 
 def signal_handler(signum, frame):
@@ -357,7 +391,7 @@ def signal_handler(signum, frame):
 running = True
 signal(SIGTERM, signal_handler)
 
-### Main loop
+# Main loop
 #
 # It continuously measures runtime metrics every MEASUREMENT_TIME_SEC,
 # and reports them to Stackdriver Monitoring API every REPORT_TIME_SEC.
