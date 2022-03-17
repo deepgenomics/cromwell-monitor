@@ -2,3 +2,4 @@
 
 !/requirements.txt
 !/monitor.py
+!/gcp_monitor.py

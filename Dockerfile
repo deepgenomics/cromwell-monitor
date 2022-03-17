@@ -17,4 +17,6 @@ RUN apk add --no-cache \
 
 ADD monitor.py ./
 
+ADD gcp_monitor.py ./
+
 ENTRYPOINT ["./monitor.py"]
