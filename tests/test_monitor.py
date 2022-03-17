@@ -1,5 +1,6 @@
 import json
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+import pytest
 
 import requests_mock
 from googleapiclient.discovery import build as google_api
@@ -325,9 +326,9 @@ def test_get_machine_info(**kwargs):
         "disks": [{"type": "pd-standard", "sizeGb": 20}],
         "owner_label": "test_owner",
     }
-    compute = google_api("compute", "v1")
-    with patch.object(
-        compute, "instances.get.execute", return_value=test_instance_payload
-    ):
-        expected_machine_info_output = get_machine_info(compute)
+    compute = Mock()
+    instances = compute.instances.return_value
+    get = instances.get.return_value
+    get.execute.return_value = test_instance_payload
+    expected_machine_info_output = get_machine_info(compute)
     assert expected_machine_info_output == actual_machine_info_output
