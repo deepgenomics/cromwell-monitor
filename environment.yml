@@ -1,0 +1,15 @@
+name: "cromwell_monitor"
+channels:
+  - deepgenomics
+  - conda-forge
+  - default
+  - bioconda
+dependencies:
+  - google-api-python-client
+  - google-cloud-monitoring
+  - psutil
+  - grpcio-tools
+  - requests
+  - pytest
+  - requests-mock
+  - make
