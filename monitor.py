@@ -48,12 +48,6 @@ def get_machine_info():
         "disks": disks,
     }
 
-    if "owner" in instance["labels"].keys():
-        machine_info.update({"owner_label": instance["labels"]["owner"]})
-
-    if "entrance-wdl" in instance["labels"].keys():
-        machine_info.update({"entrance_wdl_label": instance["labels"]["entrance-wdl"]})
-
     return machine_info
 
 
@@ -93,7 +87,7 @@ def get_machine_hour(machine, pricelist):
         memory_key = get_price_key("CUSTOM-VM-RAM", machine["preemptible"])
         return (
             pricelist[core_key][machine["region"]] * int(core)
-            + pricelist[memory_key][machine["region"]] * int(memory) / 2 ** 10
+            + pricelist[memory_key][machine["region"]] * int(memory) / 2**10
         )
     else:
         price_key = get_price_key(
@@ -164,7 +158,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2 ** 30, 1)
+    return "%.1f" % round(value_bytes / 2**30, 1)
 
 
 def get_metric(key, value_type, unit, description):
@@ -199,10 +193,6 @@ def get_time_series(metric_descriptor, value):
     labels["mem_size"] = MEMORY_SIZE_LABEL
     labels["disk_size"] = DISK_SIZE_LABEL
     labels["preemptible"] = PREEMPTIBLE_LABEL
-    if OWNER_LABEL:
-        labels["owner_label"] = OWNER_LABEL
-    if ENTRANCE_WDL_LABEL:
-        labels["entrance_wdl_label"] = ENTRANCE_WDL_LABEL
 
     series.resource.type = "gce_instance"
     series.resource.labels["zone"] = MACHINE["zone"]
@@ -268,11 +258,6 @@ COST_PER_SEC = (
     get_machine_hour(MACHINE, PRICELIST) + get_disk_hour(MACHINE, PRICELIST)
 ) / 3600
 
-# Get VectorHive2 related labels
-OWNER_LABEL = MACHINE["owner_label"] if "owner_label" in MACHINE.keys() else ""
-ENTRANCE_WDL_LABEL = (
-    MACHINE["entrance_wdl_label"] if "entrance_wdl_label" in MACHINE.keys() else ""
-)
 
 client = MetricServiceClient()
 PROJECT_NAME = client.common_project_path(MACHINE["project"])
@@ -316,14 +301,6 @@ LABEL_DESCRIPTORS = [
     ga_label.LabelDescriptor(
         key="preemptible",
         description="Preemptible flag",
-    ),
-    ga_label.LabelDescriptor(
-        key="owner_label",
-        description="Owner Label defined by user in VectorHive2",
-    ),
-    ga_label.LabelDescriptor(
-        key="entrance_wdl_label",
-        description="Entrance WDL Label defined by VectorHive2",
     ),
 ]
 
