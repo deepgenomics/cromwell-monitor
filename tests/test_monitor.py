@@ -5,7 +5,7 @@ import pytest
 import requests_mock
 from googleapiclient.discovery import build as google_api
 
-from gcp_monitor import gcp_monitor_variables, get_machine_info
+from gcp_monitor import initialize_gcp_variables, get_machine_info
 
 test_metadata_payload = {
     "attributes": {"ssh-keys": "some-ssh-key-value"},
@@ -249,10 +249,10 @@ def test_gcp_instance_workflow_id(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = gcp_monitor_variables()
+            actual_instance = initialize_gcp_variables()
     expected_instance_workflow_id = "17399163265929080700"
 
-    assert actual_instance.WORKFLOW_ID == expected_instance_workflow_id
+    assert actual_instance["WORKFLOW_ID"] == expected_instance_workflow_id
 
 
 @requests_mock.Mocker(kw="mock")
@@ -267,10 +267,10 @@ def test_gcp_instance_task_call_name(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = gcp_monitor_variables()
+            actual_instance = initialize_gcp_variables()
     expected_instance_task_call_name = "unit_test"
 
-    assert actual_instance.TASK_CALL_NAME == expected_instance_task_call_name
+    assert actual_instance["TASK_CALL_NAME"] == expected_instance_task_call_name
 
 
 @requests_mock.Mocker(kw="mock")
@@ -285,10 +285,10 @@ def test_gcp_instance_owner_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = gcp_monitor_variables()
+            actual_instance = initialize_gcp_variables()
     expected_instance_owner_label = "test_owner"
 
-    assert actual_instance.OWNER_LABEL == expected_instance_owner_label
+    assert actual_instance["OWNER_LABEL"] == expected_instance_owner_label
 
 
 @requests_mock.Mocker(kw="mock")
@@ -303,10 +303,10 @@ def test_gcp_instance_entrance_wdl_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = gcp_monitor_variables()
+            actual_instance = initialize_gcp_variables()
     expected_instance_entrance_wdl_label = ""
 
-    assert actual_instance.ENTRANCE_WDL_LABEL == expected_instance_entrance_wdl_label
+    assert actual_instance["ENTRANCE_WDL_LABEL"] == expected_instance_entrance_wdl_label
 
 
 @requests_mock.Mocker(kw="mock")

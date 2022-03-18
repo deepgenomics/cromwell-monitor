@@ -17,10 +17,9 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-gcp_variables = {}
-
-
 def initialize_gcp_variables():
+    gcp_variables = {}
+
     # json that contains GCP pricing. used for cost metric.
     gcp_variables["PRICELIST_JSON"] = "pricelist.json"
 
@@ -127,7 +126,7 @@ def initialize_gcp_variables():
     gcp_variables["MEMORY_SIZE"] = mem_usage("total")
     gcp_variables["MEMORY_SIZE_LABEL"] = format_gb(gcp_variables["MEMORY_SIZE"])
 
-    gcp_variables["DISK_SIZE"] = disk_usage("total")
+    gcp_variables["DISK_SIZE"] = disk_usage(gcp_variables, "total")
     gcp_variables["DISK_SIZE_LABEL"] = format_gb(gcp_variables["DISK_SIZE"])
 
     gcp_variables["PREEMPTIBLE_LABEL"] = str(
@@ -135,6 +134,7 @@ def initialize_gcp_variables():
     ).lower()
 
     gcp_variables["CPU_UTILIZATION_METRIC"] = get_metric(
+        gcp_variables,
         "cpu_utilization",
         "DOUBLE",
         "%",
@@ -142,6 +142,7 @@ def initialize_gcp_variables():
     )
 
     gcp_variables["MEMORY_UTILIZATION_METRIC"] = get_metric(
+        gcp_variables,
         "mem_utilization",
         "DOUBLE",
         "%",
@@ -149,6 +150,7 @@ def initialize_gcp_variables():
     )
 
     gcp_variables["DISK_UTILIZATION_METRIC"] = get_metric(
+        gcp_variables,
         "disk_utilization",
         "DOUBLE",
         "%",
@@ -156,6 +158,7 @@ def initialize_gcp_variables():
     )
 
     gcp_variables["DISK_READS_METRIC"] = get_metric(
+        gcp_variables,
         "disk_reads",
         "DOUBLE",
         "{reads}/s",
@@ -163,6 +166,7 @@ def initialize_gcp_variables():
     )
 
     gcp_variables["DISK_WRITES_METRIC"] = get_metric(
+        gcp_variables,
         "disk_writes",
         "DOUBLE",
         "{writes}/s",
@@ -170,6 +174,7 @@ def initialize_gcp_variables():
     )
 
     gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
+        gcp_variables,
         "runtime_cost_estimate",
         "DOUBLE",
         "USD",
@@ -291,7 +296,9 @@ def measure(gcp_variables):
         gcp_variables["memory_used"],
         gcp_variables["MEMORY_SIZE"] - mem_usage("available"),
     )
-    gcp_variables["disk_used"] = max(gcp_variables["disk_used"], disk_usage("used"))
+    gcp_variables["disk_used"] = max(
+        gcp_variables["disk_used"], disk_usage(gcp_variables, "used")
+    )
     logging.info("VM memory used: %s", gcp_variables["memory_used"])
 
     sleep(gcp_variables["MEASUREMENT_TIME_SEC"])
@@ -303,7 +310,7 @@ def mem_usage(param):
     return getattr(ps.virtual_memory(), param)
 
 
-def disk_usage(param):
+def disk_usage(gcp_variables, param):
     return reduce(
         lambda usage, mount: usage + getattr(ps.disk_usage(mount), param),
         gcp_variables["DISK_MOUNTS"],
@@ -375,12 +382,15 @@ def report(gcp_variables):
 
     time_delta = time() - gcp_variables["last_time"]
     create_time_series(
+        gcp_variables,
         [
             get_time_series(
+                gcp_variables,
                 gcp_variables["CPU_UTILIZATION_METRIC"],
                 {"double_value": ps.cpu_percent()},
             ),
             get_time_series(
+                gcp_variables,
                 gcp_variables["MEMORY_UTILIZATION_METRIC"],
                 {
                     "double_value": gcp_variables["memory_used"]
@@ -389,6 +399,7 @@ def report(gcp_variables):
                 },
             ),
             get_time_series(
+                gcp_variables,
                 gcp_variables["DISK_UTILIZATION_METRIC"],
                 {
                     "double_value": gcp_variables["disk_used"]
@@ -397,6 +408,7 @@ def report(gcp_variables):
                 },
             ),
             get_time_series(
+                gcp_variables,
                 gcp_variables["DISK_READS_METRIC"],
                 {
                     "double_value": (
@@ -406,6 +418,7 @@ def report(gcp_variables):
                 },
             ),
             get_time_series(
+                gcp_variables,
                 gcp_variables["DISK_WRITES_METRIC"],
                 {
                     "double_value": (
@@ -415,6 +428,7 @@ def report(gcp_variables):
                 },
             ),
             get_time_series(
+                gcp_variables,
                 gcp_variables["COST_ESTIMATE_METRIC"],
                 {
                     "double_value": (time() - ps.boot_time())

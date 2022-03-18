@@ -11,9 +11,11 @@ logging.getLogger().setLevel(logging.INFO)
 # flag to keep track of container termination
 container_running = True
 
+
 # Detect container termination
-def signal_handler(object, signum, frame):
-    object.container_running = False
+def signal_handler(signum, frame):
+    global container_running
+    container_running = False
 
 
 def main():
@@ -26,19 +28,19 @@ def main():
     right after the current measurement, and then exit normally.
     """
 
-    gcp_instance = gcp_monitor.gcp_monitor_variables()
+    gcp_instance = gcp_monitor.initialize_gcp_variables()
 
-    signal(SIGTERM, signal_handler(gcp_instance))
+    signal(SIGTERM, signal_handler)
 
-    gcp_monitor.reset(gcp_instance)
-    while gcp_instance.container_running:
-        gcp_monitor.measure(gcp_instance)
+    gcp_instance = gcp_monitor.reset(gcp_instance)
+    while container_running:
+        gcp_instance = gcp_monitor.measure(gcp_instance)
         if (
-            not gcp_instance.container_running
-            or (time() - gcp_instance.last_time) >= gcp_instance.REPORT_TIME_SEC
+            not container_running
+            or (time() - gcp_instance["last_time"]) >= gcp_instance["REPORT_TIME_SEC"]
         ):
-            gcp_monitor.report(gcp_instance)
-            gcp_monitor.reset(gcp_instance)
+            gcp_instance = gcp_monitor.report(gcp_instance)
+            gcp_instance = gcp_monitor.reset(gcp_instance)
     exit(0)
 
 
