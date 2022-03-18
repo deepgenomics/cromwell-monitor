@@ -217,7 +217,7 @@ test_instance_payload = {
     },
     "cpuPlatform": "Intel Broadwell",
     "labels": {
-        "owner": "fake_payload",
+        "owner": "test_owner",
         "test": "cromwell-monitoring",
         "created_by": "peter",
     },
@@ -249,10 +249,10 @@ def test_gcp_instance_workflow_id(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            expected_instance = gcp_monitor_variables()
-    actual_instance_workflow_id = "17399163265929080700"
+            actual_instance = gcp_monitor_variables()
+    expected_instance_workflow_id = "17399163265929080700"
 
-    assert expected_instance.WORKFLOW_ID == actual_instance_workflow_id
+    assert actual_instance.WORKFLOW_ID == expected_instance_workflow_id
 
 
 @requests_mock.Mocker(kw="mock")
@@ -267,10 +267,10 @@ def test_gcp_instance_task_call_name(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            expected_instance = gcp_monitor_variables()
-    actual_instance_task_call_name = "unit_test"
+            actual_instance = gcp_monitor_variables()
+    expected_instance_task_call_name = "unit_test"
 
-    assert expected_instance.TASK_CALL_NAME == actual_instance_task_call_name
+    assert actual_instance.TASK_CALL_NAME == expected_instance_task_call_name
 
 
 @requests_mock.Mocker(kw="mock")
@@ -285,10 +285,10 @@ def test_gcp_instance_owner_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            expected_instance = gcp_monitor_variables()
-    actual_instance_owner_label = "test_owner"
+            actual_instance = gcp_monitor_variables()
+    expected_instance_owner_label = "test_owner"
 
-    assert expected_instance.OWNER_LABEL == actual_instance_owner_label
+    assert actual_instance.OWNER_LABEL == expected_instance_owner_label
 
 
 @requests_mock.Mocker(kw="mock")
@@ -303,10 +303,10 @@ def test_gcp_instance_entrance_wdl_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            expected_instance = gcp_monitor_variables()
-    actual_instance_entrance_wdl_label = ""
+            actual_instance = gcp_monitor_variables()
+    expected_instance_entrance_wdl_label = ""
 
-    assert expected_instance.ENTRANCE_WDL_LABEL == actual_instance_entrance_wdl_label
+    assert actual_instance.ENTRANCE_WDL_LABEL == expected_instance_entrance_wdl_label
 
 
 @requests_mock.Mocker(kw="mock")
@@ -316,7 +316,7 @@ def test_get_machine_info(**kwargs):
         + "computeMetadata/v1/instance/?recursive=true",
         json=test_metadata_payload,
     )
-    actual_machine_info_output = {
+    expected_machine_info_output = {
         "project": "642504272574",
         "zone": "northamerica-northeast2-a",
         "region": "northamerica-northeast2",
@@ -330,5 +330,8 @@ def test_get_machine_info(**kwargs):
     instances = compute.instances.return_value
     get = instances.get.return_value
     get.execute.return_value = test_instance_payload
-    expected_machine_info_output = get_machine_info(compute)
-    assert expected_machine_info_output == actual_machine_info_output
+    with patch(
+        "gcp_monitor.get_disk", return_value={"type": "pd-standard", "sizeGb": 20}
+    ):
+        actual_machine_info_output = get_machine_info(compute)
+    assert actual_machine_info_output == expected_machine_info_output

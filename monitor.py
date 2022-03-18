@@ -8,6 +8,8 @@ import gcp_monitor
 
 logging.getLogger().setLevel(logging.INFO)
 
+# flag to keep track of container termination
+container_running = True
 
 # Detect container termination
 def signal_handler(object, signum, frame):

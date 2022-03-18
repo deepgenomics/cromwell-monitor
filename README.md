@@ -15,7 +15,7 @@ tasks running on
 
 After cloning this repo, from within the root directory:
 ```bash
-$ mamba env create --file requirements.dev
+$ mamba env create --file environment.yml
 $ conda activate cromwell_monitor
 $ pre-commit install # install git hook scripts
 ```
