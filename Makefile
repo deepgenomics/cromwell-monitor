@@ -1,9 +1,9 @@
 test:
-	WORKFLOW_ID="17399163265929080700" \
-	TASK_CALL_NAME="unit_test" \
-	TASK_CALL_INDEX="0" \
-	TASK_CALL_ATTEMPT="0" \
-	DISK_MOUNTS="/" \
-	OWNER_LABEL="test_owner" \
-	ENTRANCE_WDL_LABEL="" \
+	WORKFLOW_ID="ignore" \
+	TASK_CALL_NAME="ignore" \
+	TASK_CALL_INDEX="ignore" \
+	TASK_CALL_ATTEMPT="ignore" \
+	DISK_MOUNTS="ignore" \
+	OWNER_LABEL="ignore" \
+	ENTRANCE_WDL_LABEL="ignore" \
 	pytest
