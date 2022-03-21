@@ -249,7 +249,7 @@ def test_gcp_instance_workflow_id(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = initialize_gcp_variables()
+            actual_instance, _ = initialize_gcp_variables()
     expected_instance_workflow_id = "17399163265929080700"
 
     assert actual_instance["WORKFLOW_ID"] == expected_instance_workflow_id
@@ -267,7 +267,7 @@ def test_gcp_instance_task_call_name(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = initialize_gcp_variables()
+            actual_instance, _ = initialize_gcp_variables()
     expected_instance_task_call_name = "unit_test"
 
     assert actual_instance["TASK_CALL_NAME"] == expected_instance_task_call_name
@@ -285,7 +285,7 @@ def test_gcp_instance_owner_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = initialize_gcp_variables()
+            actual_instance, _ = initialize_gcp_variables()
     expected_instance_owner_label = "test_owner"
 
     assert actual_instance["OWNER_LABEL"] == expected_instance_owner_label
@@ -303,7 +303,7 @@ def test_gcp_instance_entrance_wdl_label(**kwargs):
         with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
             "gcp_monitor.get_metric", return_value=test_metric_response
         ):
-            actual_instance = initialize_gcp_variables()
+            actual_instance, _ = initialize_gcp_variables()
     expected_instance_entrance_wdl_label = ""
 
     assert actual_instance["ENTRANCE_WDL_LABEL"] == expected_instance_entrance_wdl_label

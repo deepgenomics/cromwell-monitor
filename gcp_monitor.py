@@ -4,6 +4,7 @@ from functools import reduce
 from os import environ
 from time import sleep, time
 
+import copy
 import psutil as ps
 import requests
 from google.api import label_pb2 as ga_label
@@ -64,8 +65,8 @@ def initialize_gcp_variables():
         else ""
     )
 
-    gcp_variables["client"] = MetricServiceClient()
-    gcp_variables["PROJECT_NAME"] = gcp_variables["client"].common_project_path(
+    metrics_client = MetricServiceClient()
+    gcp_variables["PROJECT_NAME"] = metrics_client.common_project_path(
         gcp_variables["MACHINE"]["project"]
     )
     logging.info("project name: %s", gcp_variables["PROJECT_NAME"])
@@ -135,6 +136,7 @@ def initialize_gcp_variables():
 
     gcp_variables["CPU_UTILIZATION_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "cpu_utilization",
         "DOUBLE",
         "%",
@@ -143,6 +145,7 @@ def initialize_gcp_variables():
 
     gcp_variables["MEMORY_UTILIZATION_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "mem_utilization",
         "DOUBLE",
         "%",
@@ -151,6 +154,7 @@ def initialize_gcp_variables():
 
     gcp_variables["DISK_UTILIZATION_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "disk_utilization",
         "DOUBLE",
         "%",
@@ -159,6 +163,7 @@ def initialize_gcp_variables():
 
     gcp_variables["DISK_READS_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "disk_reads",
         "DOUBLE",
         "{reads}/s",
@@ -167,6 +172,7 @@ def initialize_gcp_variables():
 
     gcp_variables["DISK_WRITES_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "disk_writes",
         "DOUBLE",
         "{writes}/s",
@@ -175,13 +181,14 @@ def initialize_gcp_variables():
 
     gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
         gcp_variables,
+        metrics_client,
         "runtime_cost_estimate",
         "DOUBLE",
         "USD",
         "Cumulative runtime cost estimate for a Cromwell task call",
     )
 
-    return gcp_variables
+    return gcp_variables, metrics_client
 
 
 def get_machine_info(compute):
@@ -232,8 +239,8 @@ def get_disk(compute, project, zone, disk):
         }
 
 
-def get_pricelist(PRICELIST_JSON):
-    with open(PRICELIST_JSON, "r") as f:
+def get_pricelist(pricelist_json):
+    with open(pricelist_json, "r") as f:
         return json.load(f)["gcp_price_list"]
 
 
@@ -281,29 +288,34 @@ def reset(gcp_variables):
     # because the first call of this method always reports 0
     ps.cpu_percent()
 
-    gcp_variables["memory_used"] = 0
-    gcp_variables["disk_used"]
-    gcp_variables["disk_reads"] = disk_io("read_count")
-    gcp_variables["disk_writes"] = disk_io("write_count")
+    reset_variables = copy.deepcopy(gcp_variables)
 
-    gcp_variables["last_time"] = time()
+    reset_variables["memory_used"] = 0
+    reset_variables["disk_used"]
+    reset_variables["disk_reads"] = disk_io("read_count")
+    reset_variables["disk_writes"] = disk_io("write_count")
 
-    return gcp_variables
+    reset_variables["last_time"] = time()
+
+    return reset_variables
 
 
 def measure(gcp_variables):
-    gcp_variables["memory_used"] = max(
-        gcp_variables["memory_used"],
-        gcp_variables["MEMORY_SIZE"] - mem_usage("available"),
-    )
-    gcp_variables["disk_used"] = max(
-        gcp_variables["disk_used"], disk_usage(gcp_variables, "used")
-    )
-    logging.info("VM memory used: %s", gcp_variables["memory_used"])
 
-    sleep(gcp_variables["MEASUREMENT_TIME_SEC"])
+    measure_variables = copy.deepcopy(gcp_variables)
 
-    return gcp_variables
+    measure_variables["memory_used"] = max(
+        measure_variables["memory_used"],
+        measure_variables["MEMORY_SIZE"] - mem_usage("available"),
+    )
+    measure_variables["disk_used"] = max(
+        measure_variables["disk_used"], disk_usage(measure_variables, "used")
+    )
+    logging.info("VM memory used: %s", measure_variables["memory_used"])
+
+    sleep(measure_variables["MEASUREMENT_TIME_SEC"])
+
+    return measure_variables
 
 
 def mem_usage(param):
@@ -326,8 +338,8 @@ def format_gb(value_bytes):
     return "%.1f" % round(value_bytes / 2**30, 1)
 
 
-def get_metric(gcp_variables, key, value_type, unit, description):
-    return gcp_variables["client"].create_metric_descriptor(
+def get_metric(gcp_variables, metrics_client, key, value_type, unit, description):
+    return metrics_client.create_metric_descriptor(
         name=gcp_variables["PROJECT_NAME"],
         metric_descriptor=ga_metric.MetricDescriptor(
             type="/".join(["custom.googleapis.com", gcp_variables["METRIC_ROOT"], key]),
@@ -340,8 +352,8 @@ def get_metric(gcp_variables, key, value_type, unit, description):
     )
 
 
-def create_time_series(gcp_variables, series):
-    gcp_variables["client"].create_time_series(
+def create_time_series(gcp_variables, metrics_client, series):
+    metrics_client.create_time_series(
         request={"name": gcp_variables["PROJECT_NAME"], "time_series": series}
     )
 
@@ -378,19 +390,22 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     return series
 
 
-def report(gcp_variables):
+def report(gcp_variables, metrics_client):
 
     time_delta = time() - gcp_variables["last_time"]
     create_time_series(
         gcp_variables,
+        metrics_client,
         [
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["CPU_UTILIZATION_METRIC"],
                 {"double_value": ps.cpu_percent()},
             ),
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["MEMORY_UTILIZATION_METRIC"],
                 {
                     "double_value": gcp_variables["memory_used"]
@@ -400,6 +415,7 @@ def report(gcp_variables):
             ),
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["DISK_UTILIZATION_METRIC"],
                 {
                     "double_value": gcp_variables["disk_used"]
@@ -409,6 +425,7 @@ def report(gcp_variables):
             ),
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["DISK_READS_METRIC"],
                 {
                     "double_value": (
@@ -419,6 +436,7 @@ def report(gcp_variables):
             ),
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["DISK_WRITES_METRIC"],
                 {
                     "double_value": (
@@ -429,6 +447,7 @@ def report(gcp_variables):
             ),
             get_time_series(
                 gcp_variables,
+                metrics_client,
                 gcp_variables["COST_ESTIMATE_METRIC"],
                 {
                     "double_value": (time() - ps.boot_time())

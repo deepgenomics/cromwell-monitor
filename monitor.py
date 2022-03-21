@@ -28,7 +28,7 @@ def main():
     right after the current measurement, and then exit normally.
     """
 
-    gcp_instance = gcp_monitor.initialize_gcp_variables()
+    gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables()
 
     signal(SIGTERM, signal_handler)
 
@@ -39,9 +39,8 @@ def main():
             not container_running
             or (time() - gcp_instance["last_time"]) >= gcp_instance["REPORT_TIME_SEC"]
         ):
-            gcp_instance = gcp_monitor.report(gcp_instance)
+            gcp_instance = gcp_monitor.report(gcp_instance, metrics_client)
             gcp_instance = gcp_monitor.reset(gcp_instance)
-    exit(0)
 
 
 if __name__ == "__main__":
