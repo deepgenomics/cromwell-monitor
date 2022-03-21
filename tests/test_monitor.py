@@ -1,11 +1,9 @@
 import json
-from unittest.mock import patch, Mock
-import pytest
+from unittest.mock import Mock, patch
 
 import requests_mock
-from googleapiclient.discovery import build as google_api
 
-from gcp_monitor import initialize_gcp_variables, get_machine_info
+from gcp_monitor import get_machine_info, initialize_gcp_variables
 
 test_metadata_payload = {
     "attributes": {"ssh-keys": "some-ssh-key-value"},
@@ -237,9 +235,9 @@ test_instance_payload = {
 }
 
 
-@requests_mock.Mocker(kw="mock")
+@requests_mock.Mocker(kw="requests")
 def test_gcp_instance_workflow_id(**kwargs):
-    kwargs["mock"].get(
+    kwargs["requests"].get(
         "http://metadata.google.internal/"
         + "computeMetadata/v1/instance/?recursive=true",
         json=test_metadata_payload,
@@ -255,9 +253,9 @@ def test_gcp_instance_workflow_id(**kwargs):
     assert actual_instance["WORKFLOW_ID"] == expected_instance_workflow_id
 
 
-@requests_mock.Mocker(kw="mock")
+@requests_mock.Mocker(kw="requests")
 def test_gcp_instance_task_call_name(**kwargs):
-    kwargs["mock"].get(
+    kwargs["requests"].get(
         "http://metadata.google.internal/"
         + "computeMetadata/v1/instance/?recursive=true",
         json=test_metadata_payload,
