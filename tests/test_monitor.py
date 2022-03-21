@@ -324,6 +324,7 @@ def test_get_machine_info(**kwargs):
         "disks": [{"type": "pd-standard", "sizeGb": 20}],
         "owner_label": "test_owner",
     }
+    # to mock chained calls such as compute.instances().get().execute()
     compute = Mock()
     instances = compute.instances.return_value
     get = instances.get.return_value
