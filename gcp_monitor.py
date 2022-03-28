@@ -54,9 +54,9 @@ def initialize_gcp_variables():
     ) / 3600
 
     # Get VectorHive2 related labels
-    gcp_variables["OWNER_LABEL"] = (
-        gcp_variables["MACHINE"]["owner_label"]
-        if "owner_label" in gcp_variables["MACHINE"].keys()
+    gcp_variables["OWNER"] = (
+        gcp_variables["MACHINE"]["owner"]
+        if "owner" in gcp_variables["MACHINE"].keys()
         else ""
     )
     gcp_variables["ENTRANCE_WDL"] = (
@@ -105,7 +105,7 @@ def initialize_gcp_variables():
             description="Preemptible flag",
         ),
         ga_label.LabelDescriptor(
-            key="owner_label",
+            key="owner",
             description="Owner Label defined by user in VectorHive2",
         ),
         ga_label.LabelDescriptor(
@@ -216,7 +216,7 @@ def get_machine_info(compute):
     }
 
     if "owner" in instance["labels"].keys():
-        machine_info.update({"owner_label": instance["labels"]["owner"]})
+        machine_info.update({"owner": instance["labels"]["owner"]})
 
     # GCP cloud monitoring API does not accept hyphen
     if "entrance-wdl" in instance["labels"].keys():
@@ -372,8 +372,8 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     labels["mem_size"] = gcp_variables["MEMORY_SIZE_LABEL"]
     labels["disk_size"] = gcp_variables["DISK_SIZE_LABEL"]
     labels["preemptible"] = gcp_variables["PREEMPTIBLE_LABEL"]
-    if gcp_variables["OWNER_LABEL"]:
-        labels["owner_label"] = gcp_variables["OWNER_LABEL"]
+    if gcp_variables["OWNER"]:
+        labels["owner"] = gcp_variables["OWNER"]
     if gcp_variables["ENTRANCE_WDL"]:
         labels["entrance_wdl"] = gcp_variables["ENTRANCE_WDL"]
 

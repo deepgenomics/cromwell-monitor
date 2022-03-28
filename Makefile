@@ -4,6 +4,6 @@ test:
 	TASK_CALL_INDEX="ignore" \
 	TASK_CALL_ATTEMPT="ignore" \
 	DISK_MOUNTS="ignore" \
-	OWNER_LABEL="ignore" \
+	OWNER="ignore" \
 	ENTRANCE_WDL="ignore" \
 	pytest
