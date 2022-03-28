@@ -108,7 +108,7 @@ labels {
   description: "Owner Label defined by user in VectorHive2"
 }
 labels {
-  key: "entrance_wdl_label"
+  key: "entrance_wdl"
   description: "Entrance WDL Label defined by VectorHive2"
 }
 metric_kind: GAUGE
@@ -251,7 +251,7 @@ def test_initialize_gcp_variables(**kwargs):
         "TASK_CALL_ATTEMPT": "0",
         "DISK_MOUNTS": "/",
         "OWNER_LABEL": "test_owner",
-        "ENTRACNCE_WDL_LABEL": "label1",
+        "ENTRACNCE_WDL": "label1",
     }
 
     test_machine_info_output = {
@@ -263,7 +263,7 @@ def test_initialize_gcp_variables(**kwargs):
         "preemptible": True,
         "disks": [{"type": "pd-standard", "sizeGb": 20}],
         "owner_label": "test_owner",
-        "entrance_wdl_label": "label1",
+        "entrance_wdl": "label1",
     }
     with open("tests/data/pricelist.json") as reader:
         test_pricelist = json.load(reader)["gcp_price_list"]
@@ -278,7 +278,7 @@ def test_initialize_gcp_variables(**kwargs):
     assert actual_instance["TASK_CALL_NAME"] == "unit_test"
     assert actual_instance["OWNER_LABEL"] == "test_owner"
     assert (
-        actual_instance["ENTRANCE_WDL_LABEL"]
+        actual_instance["ENTRANCE_WDL"]
         == test_instance_payload["labels"]["entrance-wdl"]
     )
 
@@ -299,7 +299,7 @@ def test_get_machine_info(**kwargs):
         "preemptible": True,
         "disks": [{"type": "pd-standard", "sizeGb": 20}],
         "owner_label": "test_owner",
-        "entrance_wdl_label": "label1",
+        "entrance_wdl": "label1",
     }
 
     test_environ_variables = {

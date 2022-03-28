@@ -59,9 +59,9 @@ def initialize_gcp_variables():
         if "owner_label" in gcp_variables["MACHINE"].keys()
         else ""
     )
-    gcp_variables["ENTRANCE_WDL_LABEL"] = (
-        gcp_variables["MACHINE"]["entrance_wdl_label"]
-        if "entrance_wdl_label" in gcp_variables["MACHINE"].keys()
+    gcp_variables["ENTRANCE_WDL"] = (
+        gcp_variables["MACHINE"]["entrance_wdl"]
+        if "entrance_wdl" in gcp_variables["MACHINE"].keys()
         else ""
     )
 
@@ -109,7 +109,7 @@ def initialize_gcp_variables():
             description="Owner Label defined by user in VectorHive2",
         ),
         ga_label.LabelDescriptor(
-            key="entrance_wdl_label",
+            key="entrance_wdl",
             description="Entrance WDL Label defined by VectorHive2",
         ),
     ]
@@ -218,8 +218,9 @@ def get_machine_info(compute):
     if "owner" in instance["labels"].keys():
         machine_info.update({"owner_label": instance["labels"]["owner"]})
 
+    # GCP cloud monitoring API does not accept hyphen
     if "entrance-wdl" in instance["labels"].keys():
-        machine_info.update({"entrance_wdl_label": instance["labels"]["entrance-wdl"]})
+        machine_info.update({"entrance_wdl": instance["labels"]["entrance-wdl"]})
 
     return machine_info
 
@@ -291,7 +292,7 @@ def reset(gcp_variables):
     reset_variables = copy.deepcopy(gcp_variables)
 
     reset_variables["memory_used"] = 0
-    reset_variables["disk_used"]
+    reset_variables["disk_used"] = 0
     reset_variables["disk_reads"] = disk_io("read_count")
     reset_variables["disk_writes"] = disk_io("write_count")
 
@@ -373,8 +374,8 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     labels["preemptible"] = gcp_variables["PREEMPTIBLE_LABEL"]
     if gcp_variables["OWNER_LABEL"]:
         labels["owner_label"] = gcp_variables["OWNER_LABEL"]
-    if gcp_variables["ENTRANCE_WDL_LABEL"]:
-        labels["entrance_wdl_label"] = gcp_variables["ENTRANCE_WDL_LABEL"]
+    if gcp_variables["ENTRANCE_WDL"]:
+        labels["entrance_wdl"] = gcp_variables["ENTRANCE_WDL"]
 
     series.resource.type = "gce_instance"
     series.resource.labels["zone"] = gcp_variables["MACHINE"]["zone"]

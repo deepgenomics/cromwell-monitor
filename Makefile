@@ -5,5 +5,5 @@ test:
 	TASK_CALL_ATTEMPT="ignore" \
 	DISK_MOUNTS="ignore" \
 	OWNER_LABEL="ignore" \
-	ENTRANCE_WDL_LABEL="ignore" \
+	ENTRANCE_WDL="ignore" \
 	pytest
