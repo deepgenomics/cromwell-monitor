@@ -6,11 +6,6 @@ tasks running on
 [Google Cloud Life Sciences API v2beta](https://cloud.google.com/life-sciences/docs/reference/rest/v2beta/projects.locations.pipelines/run).
 
 
-### How to use Cromwell task monitor in VectorHive2
-
-[Link to Demo & Tutorial](https://docs.google.com/presentation/d/1RnAq6LKC5zpLIXyNoVmNRNREfX0sZMDvzoyEwJtx49w/edit?usp=sharing)
-
-
 ### Setup a development environment
 
 After cloning this repo, from within the root directory:
@@ -33,12 +28,11 @@ $ make test
 
 The [monitoring script](monitor.py)
 is intended to be used through a Docker image (as part of an associated "monitoring action"), currently built as
-[gcr.io/dg-platform/vh2-cromwell-monitor](https://console.cloud.google.com/gcr/images/dg-platform/global/vh2-cromwell-monitor?project=dg-platform).
+"vh2-cromwell-monitor".
 
 It uses [psutil](https://psutil.readthedocs.io) to
 continuously measure CPU, memory and disk utilization
-and disk IOPS, and periodically report them
-as as [custom metrics to Cloud Monitoring API](https://cloud.google.com/monitoring/custom-metrics).
+and disk IOPS, and periodically report them as [custom metrics to Cloud Monitoring API](https://cloud.google.com/monitoring/custom-metrics).
 
 The labels for each time point contain the following metadata:
 - Cromwell-specific values, such as workflow ID, task call name, index and attempt.
