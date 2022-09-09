@@ -27,8 +27,7 @@ $ make test
 ### How does Cromwell task monitor work
 
 The [monitoring script](monitor.py)
-is intended to be used through a Docker image (as part of an associated "monitoring action"), currently built as
-"vh2-cromwell-monitor".
+is intended to be used through a Docker image (as part of an associated "monitoring action").
 
 It uses [psutil](https://psutil.readthedocs.io) to
 continuously measure CPU, memory and disk utilization
