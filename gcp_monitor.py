@@ -269,7 +269,7 @@ def get_disk_hour(machine, pricelist):
     total = 0
     for disk in machine["disks"]:
         price_key = "CP-COMPUTEENGINE-"
-        if disk["type"] == "pd-standard":
+        if disk["type"] == "pd-standard" or disk["type"] == "pd-balanced":
             price_key += "STORAGE-PD-CAPACITY"
         elif disk["type"] == "pd-ssd":
             price_key += "STORAGE-PD-SSD"
