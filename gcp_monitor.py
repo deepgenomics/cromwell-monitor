@@ -267,9 +267,9 @@ def get_machine_hour(machine, pricelist):
 
 def get_disk_hour(machine, pricelist):
     total = 0
-    for disk in machine["disks"]:
+    for disk in machine.get("disks"):
         price_key = "CP-COMPUTEENGINE-"
-        if disk["type"] == "pd-standard":
+        if disk["type"] == "pd-standard" or disk["type"] == "pd-balanced":
             price_key += "STORAGE-PD-CAPACITY"
         elif disk["type"] == "pd-ssd":
             price_key += "STORAGE-PD-SSD"
@@ -277,6 +277,10 @@ def get_disk_hour(machine, pricelist):
             price_key += "LOCAL-SSD"
             if machine["preemptible"]:
                 price_key += "-PREEMPTIBLE"
+        assert price_key in pricelist.keys(), f"Unknown disk type: {disk['type']}"
+        assert machine["region"] in pricelist[price_key].keys(), (
+            f"Unknown region: {machine['region']} for disk type: {disk['type']}"
+        )
         price = pricelist[price_key][machine["region"]] * disk["sizeGb"]
         if disk["type"].startswith("pd"):
             price /= 730  # hours per month
