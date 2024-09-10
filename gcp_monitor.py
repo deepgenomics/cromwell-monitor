@@ -18,11 +18,10 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables():
+def initialize_gcp_variables(services_pricelist: dict = None):
     gcp_variables = {}
 
-    # json that contains GCP pricing. used for cost metric.
-    gcp_variables["PRICELIST_JSON"] = "pricelist.json"
+    gcp_variables["PRICELIST"] = services_pricelist
 
     # initialize Google API client
     gcp_variables["compute"] = google_api("compute", "v1")
@@ -45,13 +44,13 @@ def initialize_gcp_variables():
     gcp_variables["REPORT_TIME_SEC_MIN"] = 60
     gcp_variables["REPORT_TIME_SEC"] = gcp_variables["REPORT_TIME_SEC_MIN"]
 
-    # Get billing rates
-    gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
-    gcp_variables["PRICELIST"] = get_pricelist(gcp_variables["PRICELIST_JSON"])
-    gcp_variables["COST_PER_SEC"] = (
-        get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-        + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-    ) / 3600
+    # Get billing rates if pricing data is available
+    if gcp_variables["PRICELIST"]:
+        gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
+        gcp_variables["COST_PER_SEC"] = (
+            get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+            + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+        ) / 3600
 
     # Get VectorHive2 related labels
     gcp_variables["OWNER"] = (
@@ -178,15 +177,15 @@ def initialize_gcp_variables():
         "{writes}/s",
         "Disk write IOPS in a Cromwell task call",
     )
-
-    gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
-        gcp_variables,
-        metrics_client,
-        "runtime_cost_estimate",
-        "DOUBLE",
-        "USD",
-        "Cumulative runtime cost estimate for a Cromwell task call",
-    )
+    if gcp_variables["PRICELIST"]:
+        gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
+            gcp_variables,
+            metrics_client,
+            "runtime_cost_estimate",
+            "DOUBLE",
+            "USD",
+            "Cumulative runtime cost estimate for a Cromwell task call",
+        )
 
     return gcp_variables, metrics_client
 
@@ -238,11 +237,6 @@ def get_disk(compute, project, zone, disk):
             "type": "local-ssd",
             "sizeGb": 375,
         }
-
-
-def get_pricelist(pricelist_json):
-    with open(pricelist_json, "r") as f:
-        return json.load(f)["gcp_price_list"]
 
 
 def get_price_key(key, preemptible):
@@ -396,55 +390,50 @@ def get_time_series(gcp_variables, metric_descriptor, value):
 
 
 def report(gcp_variables, metrics_client):
-
     time_delta = time() - gcp_variables["last_time"]
-    create_time_series(
-        gcp_variables,
-        metrics_client,
-        [
-            get_time_series(
-                gcp_variables,
-                gcp_variables["CPU_UTILIZATION_METRIC"],
-                {"double_value": ps.cpu_percent()},
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["MEMORY_UTILIZATION_METRIC"],
-                {
-                    "double_value": gcp_variables["memory_used"]
-                    / gcp_variables["MEMORY_SIZE"]
-                    * 100
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_UTILIZATION_METRIC"],
-                {
-                    "double_value": gcp_variables["disk_used"]
-                    / gcp_variables["DISK_SIZE"]
-                    * 100
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_READS_METRIC"],
-                {
-                    "double_value": (
-                        disk_io("read_count") - gcp_variables["disk_reads"]
-                    )
-                    / time_delta
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_WRITES_METRIC"],
-                {
-                    "double_value": (
-                        disk_io("write_count") - gcp_variables["disk_writes"]
-                    )
-                    / time_delta
-                },
-            ),
+    series = [
+        get_time_series(
+            gcp_variables,
+            gcp_variables["CPU_UTILIZATION_METRIC"],
+            {"double_value": ps.cpu_percent()},
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["MEMORY_UTILIZATION_METRIC"],
+            {
+                "double_value": gcp_variables["memory_used"]
+                / gcp_variables["MEMORY_SIZE"]
+                * 100
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_UTILIZATION_METRIC"],
+            {
+                "double_value": gcp_variables["disk_used"]
+                / gcp_variables["DISK_SIZE"]
+                * 100
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_READS_METRIC"],
+            {
+                "double_value": (disk_io("read_count") - gcp_variables["disk_reads"])
+                / time_delta
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_WRITES_METRIC"],
+            {
+                "double_value": (disk_io("write_count") - gcp_variables["disk_writes"])
+                / time_delta
+            },
+        ),
+    ]
+    if gcp_variables["PRICELIST"]:
+        series.append(
             get_time_series(
                 gcp_variables,
                 gcp_variables["COST_ESTIMATE_METRIC"],
@@ -453,7 +442,11 @@ def report(gcp_variables, metrics_client):
                     * gcp_variables["COST_PER_SEC"]
                 },
             ),
-        ],
+        )
+
+    create_time_series(
+        gcp_variables,
+        metrics_client,
     )
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
 
