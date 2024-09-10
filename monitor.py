@@ -4,6 +4,8 @@ import logging
 from signal import SIGTERM, signal
 from time import time
 
+import pynvml
+
 import gcp_monitor
 
 logging.getLogger().setLevel(logging.INFO)
@@ -28,19 +30,36 @@ def main():
     right after the current measurement, and then exit normally.
     """
 
-    gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables()
+    nvml_ok = True
+    try:
+        pynvml.nvmlInit()
+    except pynvml.NVMLError as e:
+        # expected if the machine does not have an NVIDIA GPU
+        logging.info(f"NVML initialization failed (probably no GPUs): {e}")
+        nvml_ok = False
 
-    signal(SIGTERM, signal_handler)
+    gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables(nvml_ok)
 
-    gcp_instance = gcp_monitor.reset(gcp_instance)
-    while container_running:
-        gcp_instance = gcp_monitor.measure(gcp_instance)
-        if (
-            not container_running
-            or (time() - gcp_instance["last_time"]) >= gcp_instance["REPORT_TIME_SEC"]
-        ):
-            gcp_instance = gcp_monitor.report(gcp_instance, metrics_client)
-            gcp_instance = gcp_monitor.reset(gcp_instance)
+    try:
+        signal(SIGTERM, signal_handler)
+
+        gcp_instance = gcp_monitor.reset(gcp_instance)
+        while container_running:
+            gcp_instance = gcp_monitor.measure(gcp_instance)
+            if (
+                not container_running
+                or (time() - gcp_instance["last_time"])
+                >= gcp_instance["REPORT_TIME_SEC"]
+            ):
+                gcp_instance = gcp_monitor.report(gcp_instance, metrics_client, nvml_ok)
+                gcp_instance = gcp_monitor.reset(gcp_instance)
+    finally:
+        if nvml_ok:
+            try:
+                pynvml.nvmlShutdown()
+                print("NVML shutdown successfully")
+            except pynvml.NVMLError:
+                print("Failed to shutdown NVML")
 
 
 if __name__ == "__main__":

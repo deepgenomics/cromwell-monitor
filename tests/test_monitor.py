@@ -271,8 +271,10 @@ def test_initialize_gcp_variables(**kwargs):
             "gcp_monitor.get_metric", return_value=test_metric_response
         ), patch.dict("os.environ", test_environ_variables), patch(
             "gcp_monitor.get_machine_info", return_value=test_machine_info_output
+        ), patch(
+            "pynvml.nvmlDeviceGetCount", return_value=2
         ):
-            actual_instance, _ = initialize_gcp_variables()
+            actual_instance, _ = initialize_gcp_variables(nvml_ok=True)
 
     assert actual_instance["WORKFLOW_ID"] == "17399163265929080700"
     assert actual_instance["TASK_CALL_NAME"] == "unit_test"
@@ -281,6 +283,13 @@ def test_initialize_gcp_variables(**kwargs):
         actual_instance["ENTRANCE_WDL"]
         == test_instance_payload["labels"]["entrance-wdl"]
     )
+    for i in [0, 1]:
+        for metric in [
+            "UTILIZATION_METRIC",
+            "MEM_UTILIZATION_METRIC",
+            "MEM_USED_METRIC",
+        ]:
+            assert f"GPU{i}_{metric}" in actual_instance
 
 
 @requests_mock.Mocker(kw="requests")

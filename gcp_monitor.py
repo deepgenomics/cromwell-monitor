@@ -6,6 +6,7 @@ from os import environ
 from time import sleep, time
 
 import psutil as ps
+import pynvml
 import requests
 from google.api import label_pb2 as ga_label
 from google.api import metric_pb2 as ga_metric
@@ -18,7 +19,7 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables():
+def initialize_gcp_variables(nvml_ok: bool):
     gcp_variables = {}
 
     # json that contains GCP pricing. used for cost metric.
@@ -53,7 +54,6 @@ def initialize_gcp_variables():
         + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
     ) / 3600
 
-    # Get VectorHive2 related labels
     gcp_variables["OWNER"] = (
         gcp_variables["MACHINE"]["owner"]
         if "owner" in gcp_variables["MACHINE"].keys()
@@ -179,6 +179,36 @@ def initialize_gcp_variables():
         "Disk write IOPS in a Cromwell task call",
     )
 
+    if nvml_ok:
+        num_gpus = pynvml.nvmlDeviceGetCount()
+        for i in range(num_gpus):
+            gcp_variables[f"GPU{i}_UTILIZATION_METRIC"] = get_metric(
+                gcp_variables,
+                metrics_client,
+                f"gpu{i}_utilization",
+                "INT64",
+                "%",
+                f"GPU{i}: Percent of time over the past sample period during which one or more kernels was executing",
+            )
+
+            gcp_variables[f"GPU{i}_MEM_UTILIZATION_METRIC"] = get_metric(
+                gcp_variables,
+                metrics_client,
+                f"gpu{i}_mem_time_utilization",
+                "INT64",
+                "%",
+                f"GPU{i}: Percent of time over the past sample period during which global (device) memory was being read or written",
+            )
+
+            gcp_variables[f"GPU{i}_MEM_USED_METRIC"] = get_metric(
+                gcp_variables,
+                metrics_client,
+                f"gpu{i}_mem_used",
+                "INT64",
+                "%",
+                f"GPU{i}: Percent of memory utilized (used / available)",
+            )
+
     gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
         gcp_variables,
         metrics_client,
@@ -204,6 +234,8 @@ def get_machine_info(compute):
     )
 
     disks = [get_disk(compute, project, zone, disk) for disk in instance["disks"]]
+    # gpuCount = pynvml.nvmlDeviceGetCount()
+    # gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(gpuCount)]
 
     machine_info = {
         "project": project,
@@ -213,6 +245,8 @@ def get_machine_info(compute):
         "type": instance["machineType"].split("/")[-1],
         "preemptible": instance["scheduling"]["preemptible"],
         "disks": disks,
+        # TODO not sure that deep-copying the pynvml objects is safe
+        # "gpus": gpus,
     }
 
     if "owner" in instance["labels"].keys():
@@ -256,7 +290,7 @@ def get_machine_hour(machine, pricelist):
         memory_key = get_price_key("CUSTOM-VM-RAM", machine["preemptible"])
         return (
             pricelist[core_key][machine["region"]] * int(core)
-            + pricelist[memory_key][machine["region"]] * int(memory) / 2 ** 10
+            + pricelist[memory_key][machine["region"]] * int(memory) / 2**10
         )
     else:
         price_key = get_price_key(
@@ -278,9 +312,9 @@ def get_disk_hour(machine, pricelist):
             if machine["preemptible"]:
                 price_key += "-PREEMPTIBLE"
         assert price_key in pricelist.keys(), f"Unknown disk type: {disk['type']}"
-        assert machine["region"] in pricelist[price_key].keys(), (
-            f"Unknown region: {machine['region']} for disk type: {disk['type']}"
-        )
+        assert (
+            machine["region"] in pricelist[price_key].keys()
+        ), f"Unknown region: {machine['region']} for disk type: {disk['type']}"
         price = pricelist[price_key][machine["region"]] * disk["sizeGb"]
         if disk["type"].startswith("pd"):
             price /= 730  # hours per month
@@ -340,7 +374,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2 ** 30, 1)
+    return "%.1f" % round(value_bytes / 2**30, 1)
 
 
 def get_metric(gcp_variables, metrics_client, key, value_type, unit, description):
@@ -395,9 +429,44 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     return series
 
 
-def report(gcp_variables, metrics_client):
+def report(gcp_variables, metrics_client, nvml_ok: bool = False):
 
+    num_gpus = pynvml.nvmlDeviceGetCount() if nvml_ok else 0
     time_delta = time() - gcp_variables["last_time"]
+    gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(num_gpus)]
+    # https://pypi.org/project/nvidia-ml-py is a thin wrapper over the C NVML library
+    # See https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html
+    # for type info and field names
+    gpu_utilization_rates = [
+        pynvml.nvmlDeviceGetUtilizationRates(gpus[i]) for i in range(num_gpus)
+    ]
+    gpu_mem_info = [pynvml.nvmlDeviceGetMemoryInfo(gpus[i]) for i in range(num_gpus)]
+    gpu_metrics = [
+        *[
+            get_time_series(
+                gcp_variables,
+                gcp_variables[f"GPU{i}_UTILIZATION_METRIC"],
+                {"int64_value": (gpu_utilization_rates[i].gpu)},
+            )
+            for i in range(num_gpus)
+        ],
+        *[
+            get_time_series(
+                gcp_variables,
+                gcp_variables[f"GPU{i}_MEM_UTILIZATION_METRIC"],
+                {"int64_value": (gpu_utilization_rates[i].memory)},
+            )
+            for i in range(num_gpus)
+        ],
+        *[
+            get_time_series(
+                gcp_variables,
+                gcp_variables[f"GPU{i}_MEM_USED_METRIC"],
+                {"int64_value": (gpu_mem_info[i].memory)},
+            )
+            for i in range(num_gpus)
+        ],
+    ]
     create_time_series(
         gcp_variables,
         metrics_client,
@@ -453,6 +522,7 @@ def report(gcp_variables, metrics_client):
                     * gcp_variables["COST_PER_SEC"]
                 },
             ),
+            *gpu_metrics,
         ],
     )
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
