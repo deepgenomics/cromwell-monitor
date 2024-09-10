@@ -1,5 +1,4 @@
 import copy
-import json
 import logging
 from functools import reduce
 from os import environ
@@ -19,11 +18,10 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables(nvml_ok: bool):
+def initialize_gcp_variables(nvml_ok: bool, services_pricelist: dict = None):
     gcp_variables = {}
 
-    # json that contains GCP pricing. used for cost metric.
-    gcp_variables["PRICELIST_JSON"] = "pricelist.json"
+    gcp_variables["PRICELIST"] = services_pricelist
 
     # initialize Google API client
     gcp_variables["compute"] = google_api("compute", "v1")
@@ -46,13 +44,13 @@ def initialize_gcp_variables(nvml_ok: bool):
     gcp_variables["REPORT_TIME_SEC_MIN"] = 60
     gcp_variables["REPORT_TIME_SEC"] = gcp_variables["REPORT_TIME_SEC_MIN"]
 
-    # Get billing rates
-    gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
-    gcp_variables["PRICELIST"] = get_pricelist(gcp_variables["PRICELIST_JSON"])
-    gcp_variables["COST_PER_SEC"] = (
-        get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-        + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-    ) / 3600
+    # Get billing rates if pricing data is available
+    if gcp_variables["PRICELIST"]:
+        gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
+        gcp_variables["COST_PER_SEC"] = (
+            get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+            + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+        ) / 3600
 
     gcp_variables["OWNER"] = (
         gcp_variables["MACHINE"]["owner"]
@@ -208,15 +206,15 @@ def initialize_gcp_variables(nvml_ok: bool):
                 "%",
                 f"GPU{i}: Percent of memory utilized (used / available)",
             )
-
-    gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
-        gcp_variables,
-        metrics_client,
-        "runtime_cost_estimate",
-        "DOUBLE",
-        "USD",
-        "Cumulative runtime cost estimate for a Cromwell task call",
-    )
+    if gcp_variables["PRICELIST"]:
+        gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
+            gcp_variables,
+            metrics_client,
+            "runtime_cost_estimate",
+            "DOUBLE",
+            "USD",
+            "Cumulative runtime cost estimate for a Cromwell task call",
+        )
 
     return gcp_variables, metrics_client
 
@@ -268,11 +266,6 @@ def get_disk(compute, project, zone, disk):
             "type": "local-ssd",
             "sizeGb": 375,
         }
-
-
-def get_pricelist(pricelist_json):
-    with open(pricelist_json, "r") as f:
-        return json.load(f)["gcp_price_list"]
 
 
 def get_price_key(key, preemptible):
@@ -426,7 +419,6 @@ def get_time_series(gcp_variables, metric_descriptor, value):
 
 
 def report(gcp_variables, metrics_client, nvml_ok: bool = False):
-
     num_gpus = pynvml.nvmlDeviceGetCount() if nvml_ok else 0
     time_delta = time() - gcp_variables["last_time"]
     gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(num_gpus)]
@@ -463,6 +455,20 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False):
             for i in range(num_gpus)
         ],
     ]
+    cost_metric = (
+        [
+            get_time_series(
+                gcp_variables,
+                gcp_variables["COST_ESTIMATE_METRIC"],
+                {
+                    "double_value": (time() - ps.boot_time())
+                    * gcp_variables["COST_PER_SEC"]
+                },
+            )
+        ]
+        if gcp_variables["PRICELIST"]
+        else []
+    )
     create_time_series(
         gcp_variables,
         metrics_client,
@@ -510,17 +516,9 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False):
                     / time_delta
                 },
             ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["COST_ESTIMATE_METRIC"],
-                {
-                    "double_value": (time() - ps.boot_time())
-                    * gcp_variables["COST_PER_SEC"]
-                },
-            ),
             *gpu_metrics,
+            *cost_metric,
         ],
     )
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
-
     return gcp_variables
