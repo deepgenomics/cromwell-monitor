@@ -33,7 +33,8 @@ def get_pricelist_dict() -> dict:
     }
     res = requests.get(
         "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
-        params=query_params)
+        params=query_params,
+    )
     res.raise_for_status()
     services_json = res.json()
     next_page_token = services_json.get("nextPageToken", "")
@@ -42,7 +43,8 @@ def get_pricelist_dict() -> dict:
         query_params["pageToken"] = next_page_token
         res = requests.get(
             "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
-            params=query_params)
+            params=query_params,
+        )
         services_json = res.json()
         next_page_token = services_json.get("nextPageToken", "")
         services_dict += services_json.get("skus", [])
@@ -60,7 +62,9 @@ def main():
     """
     try:
         services_pricelist: dict = get_pricelist_dict()
-        gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables(services_pricelist)
+        gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables(
+            services_pricelist
+        )
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to retrieve pricelist: {e}")
         logging.warning("Will attempt to continue monitoring without pricing data...")

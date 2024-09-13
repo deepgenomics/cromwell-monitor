@@ -58,7 +58,9 @@ def initialize_gcp_variables(services_pricelist: dict = None):
             ) / 3600
         except ValueError as e:
             logging.error(f"Failed to get pricing data: {e}")
-            logging.warning("Will attempt to continue monitoring without pricing data...")
+            logging.warning(
+                "Will attempt to continue monitoring without pricing data..."
+            )
             gcp_variables["PRICING_AVAILABLE"] = False
 
     # Get VectorHive2 related labels
@@ -263,10 +265,11 @@ def get_machine_hour(machine, pricelist):
     num_cpus: int | None = os.cpu_count()
     if num_cpus is None:
         raise ValueError("Could not determine number of CPUs")
-    num_ram_gb = ps.virtual_memory().total / (1024 ** 3)  # convert bytes to GiB
+    num_ram_gb = ps.virtual_memory().total / (1024**3)  # convert bytes to GiB
     num_gpus = machine["guestAccelerators"].get("acceleratorCount", 0)
     gpu_type: str | None = machine["guestAccelerators"].get("acceleratorType", None)
-    # By default accelerator type is in the form of projects/{project}/zones/{zone}/acceleratorTypes/{type}
+    # By default accelerator type is in the form of
+    # projects/{project}/zones/{zone}/acceleratorTypes/{type}
     gpu_type = gpu_type.split("/")[-1] if gpu_type else None
 
     # Initial sku filtering results will go in these vars
@@ -277,25 +280,59 @@ def get_machine_hour(machine, pricelist):
     if machine_is_n1_custom:  # N1 and N1 Custom machines need different filters
         # Need to concat usage type and custom because just "Custom" will return
         # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
-        machine_type_skus = [sku for sku in pricelist if str(usage_type)+" Custom" in sku["description"]]
-        regional_skus = [sku for sku in machine_type_skus if machine["region"] in sku["serviceRegions"]]
+        machine_type_skus = [
+            sku
+            for sku in pricelist
+            if str(usage_type) + " Custom" in sku["description"]
+        ]
+        regional_skus = [
+            sku
+            for sku in machine_type_skus
+            if machine["region"] in sku["serviceRegions"]
+        ]
         usage_type_skus = [
             sku for sku in regional_skus if usage_type in sku["category"]["usageType"]
         ]
-        core_skus = [sku for sku in usage_type_skus if "CPU" in sku["category"]["resourceGroup"]]
-        memory_skus = [sku for sku in usage_type_skus if "RAM" in sku["category"]["resourceGroup"]]
+        core_skus = [
+            sku for sku in usage_type_skus if "CPU" in sku["category"]["resourceGroup"]
+        ]
+        memory_skus = [
+            sku for sku in usage_type_skus if "RAM" in sku["category"]["resourceGroup"]
+        ]
     elif machine_prefix == "N1":  # N1 and N1 Custom machines need different filters
-        machine_type_skus = [sku for sku in pricelist if machine_prefix in sku["category"]["resourceGroup"]]
-        regional_skus = [sku for sku in machine_type_skus if machine["region"] in sku["serviceRegions"]]
-        usage_type_skus = [sku for sku in regional_skus if usage_type in sku["category"]["usageType"]]
+        machine_type_skus = [
+            sku
+            for sku in pricelist
+            if machine_prefix in sku["category"]["resourceGroup"]
+        ]
+        regional_skus = [
+            sku
+            for sku in machine_type_skus
+            if machine["region"] in sku["serviceRegions"]
+        ]
+        usage_type_skus = [
+            sku for sku in regional_skus if usage_type in sku["category"]["usageType"]
+        ]
         core_skus = [sku for sku in usage_type_skus if "Core" in sku["description"]]
         memory_skus = [sku for sku in usage_type_skus if "Ram" in sku["description"]]
     else:
-        machine_type_skus = [sku for sku in pricelist if machine_prefix in sku["description"]]
-        regional_skus = [sku for sku in machine_type_skus if machine["region"] in sku["serviceRegions"]]
-        usage_type_skus = [sku for sku in regional_skus if usage_type in sku["category"]["usageType"]]
-        core_skus = [sku for sku in usage_type_skus if "CPU" in sku["category"]["resourceGroup"]]
-        memory_skus = [sku for sku in usage_type_skus if "RAM" in sku["category"]["resourceGroup"]]
+        machine_type_skus = [
+            sku for sku in pricelist if machine_prefix in sku["description"]
+        ]
+        regional_skus = [
+            sku
+            for sku in machine_type_skus
+            if machine["region"] in sku["serviceRegions"]
+        ]
+        usage_type_skus = [
+            sku for sku in regional_skus if usage_type in sku["category"]["usageType"]
+        ]
+        core_skus = [
+            sku for sku in usage_type_skus if "CPU" in sku["category"]["resourceGroup"]
+        ]
+        memory_skus = [
+            sku for sku in usage_type_skus if "RAM" in sku["category"]["resourceGroup"]
+        ]
 
     if machine_is_custom or machine_is_n1_custom:
         # Filter out non-custom machines from core and memory skus
@@ -309,7 +346,9 @@ def get_machine_hour(machine, pricelist):
     if machine_is_extended_memory:
         memory_skus = [sku for sku in memory_skus if "Extended" in sku["description"]]
     else:
-        memory_skus = [sku for sku in memory_skus if "Extended" not in sku["description"]]
+        memory_skus = [
+            sku for sku in memory_skus if "Extended" not in sku["description"]
+        ]
 
     if num_gpus > 0:
         # Convert GPU type to name used in pricing API
@@ -336,11 +375,22 @@ def get_machine_hour(machine, pricelist):
             case _:
                 raise ValueError(f"Unknown GPU type: {gpu_type}")
 
-        gpu_resource_skus = [sku for sku in pricelist if "GPU" in sku["category"]["resourceGroup"]]
-        gpu_region_skus = [sku for sku in gpu_resource_skus if machine["region"] in sku["serviceRegions"]]
-        gpu_type_skus = [sku for sku in gpu_region_skus if gpu_type in sku["description"]]
-        gpu_skus = [sku for sku in gpu_type_skus if usage_type in sku["category"]["usageType"]]
-        # Edge-case where h100 mega gpu machines have a different sku names for CPU and RAM
+        gpu_resource_skus = [
+            sku for sku in pricelist if "GPU" in sku["category"]["resourceGroup"]
+        ]
+        gpu_region_skus = [
+            sku
+            for sku in gpu_resource_skus
+            if machine["region"] in sku["serviceRegions"]
+        ]
+        gpu_type_skus = [
+            sku for sku in gpu_region_skus if gpu_type in sku["description"]
+        ]
+        gpu_skus = [
+            sku for sku in gpu_type_skus if usage_type in sku["category"]["usageType"]
+        ]
+        # Edge-case where h100 mega gpu machines have
+        # different sku names for CPU and RAM
         if gpu_type == "H100 80GB Plus":
             core_skus = [sku for sku in core_skus if "A3Plus" in sku["description"]]
             memory_skus = [sku for sku in memory_skus if "A3Plus" in sku["description"]]
@@ -361,15 +411,27 @@ def get_machine_hour(machine, pricelist):
 
     # Pricing api splits the price into units and nanos.
     # Units are whole dollars, nanos are cents but represented as nanos of a dollar
-    cpu_dollars_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
-    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
+    cpu_dollars_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["units"]
+    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
     cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
-    ram_dollars_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
-    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
+    ram_dollars_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["units"]
+    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
     ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
     if num_gpus > 0:
-        gpu_dollars_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
-        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
+        gpu_dollars_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["units"]
+        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["nanos"] / (10**9)
         gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
         return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
     else:
@@ -404,25 +466,53 @@ def get_disk_hour(machine, pricelist):
             case _:
                 raise ValueError(f"Unknown disk type: {disk['type']}")
         # Filter skus to be in the same region as the VM
-        regional_price_skus = [sku for sku in pricelist if machine["region"] in sku["serviceRegions"]]
+        regional_price_skus = [
+            sku for sku in pricelist if machine["region"] in sku["serviceRegions"]
+        ]
         # All disks only have OnDemand billing
-        filtered_price_skus = [sku for sku in regional_price_skus if "OnDemand" in sku["category"]["usageType"]]
-        filtered_price_skus = [sku for sku in filtered_price_skus if "Storage" in sku["category"]["resourceFamily"]]
+        filtered_price_skus = [
+            sku
+            for sku in regional_price_skus
+            if "OnDemand" in sku["category"]["usageType"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "Storage" in sku["category"]["resourceFamily"]
+        ]
         # Assume all disks are not regional, HA, confidential, etc.
         # Use the following set of negative filters to remove those
-        filtered_price_skus = [sku for sku in filtered_price_skus if "Pools" not in sku["description"]]
-        filtered_price_skus = [sku for sku in filtered_price_skus if "Confidential" not in sku["description"]]
-        filtered_price_skus = [sku for sku in filtered_price_skus if "Regional" not in sku["description"]]
-        filtered_price_skus = [sku for sku in filtered_price_skus if "High Availability" not in sku["description"]]
+        filtered_price_skus = [
+            sku for sku in filtered_price_skus if "Pools" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "Confidential" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku for sku in filtered_price_skus if "Regional" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "High Availability" not in sku["description"]
+        ]
         # Filter by disk type
-        disk_sku = [sku for sku in filtered_price_skus if search_term in sku["description"]]
+        disk_sku = [
+            sku for sku in filtered_price_skus if search_term in sku["description"]
+        ]
         if len(disk_sku) != 1:
             logging.error(f"Expected 1 sku for disk, got {len(disk_sku)}")
             logging.error(f"Skus: {disk_sku}")
             raise ValueError(f"Expected 1 sku for disk, got {len(disk_sku)}")
 
-        disk_price_gb_dollars = disk_sku[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
-        disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
+        disk_price_gb_dollars = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["units"]
+        disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["nanos"] / (10**9)
         # Disk prices are per month, need to convert to hourly, 730 hours in a month
         disk_price_gb = (disk_price_gb_dollars + disk_price_gb_cents) / 730
 
@@ -483,7 +573,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2 ** 30, 1)
+    return "%.1f" % round(value_bytes / 2**30, 1)
 
 
 def get_metric(gcp_variables, metrics_client, key, value_type, unit, description):
