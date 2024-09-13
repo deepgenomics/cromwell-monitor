@@ -361,15 +361,15 @@ def get_machine_hour(machine, pricelist):
 
     # Pricing api splits the price into units and nanos.
     # Units are whole dollars, nanos are cents but represented as nanos of a dollar
-    cpu_dollars_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["units"]
-    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["nanos"] / (10**9)
+    cpu_dollars_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
+    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
     cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
-    ram_dollars_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["units"]
-    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["nanos"] / (10**9)
+    ram_dollars_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
+    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
     ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
     if num_gpus > 0:
-        gpu_dollars_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["units"]
-        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][0]["unitPrice"]["nanos"] / (10**9)
+        gpu_dollars_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
+        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
         gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
         return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
     else:
@@ -377,24 +377,56 @@ def get_machine_hour(machine, pricelist):
 
 
 def get_disk_hour(machine, pricelist):
+    # This function will ignore Hyperdisk Throughput Storage Pools cost since it is
+    # billed monthly based on resources allocated to the pool, not the VM
     total = 0
     for disk in machine.get("disks"):
-        price_key = "CP-COMPUTEENGINE-"
-        if disk["type"] == "pd-standard" or disk["type"] == "pd-balanced":
-            price_key += "STORAGE-PD-CAPACITY"
-        elif disk["type"] == "pd-ssd":
-            price_key += "STORAGE-PD-SSD"
-        elif disk["type"] == "local-ssd":
-            price_key += "LOCAL-SSD"
-            if machine["preemptible"]:
-                price_key += "-PREEMPTIBLE"
-        assert price_key in pricelist.keys(), f"Unknown disk type: {disk['type']}"
-        assert machine["region"] in pricelist[price_key].keys(), (
-            f"Unknown region: {machine['region']} for disk type: {disk['type']}"
-        )
-        price = pricelist[price_key][machine["region"]] * disk["sizeGb"]
-        if disk["type"].startswith("pd"):
-            price /= 730  # hours per month
+        search_term: str | None = None
+        match disk["type"]:
+            case "pd-standard":
+                search_term = "Storage PD Capacity"
+            case "pd-balanced":
+                search_term = "Balanced PD Capacity"
+            case "pd-ssd":
+                search_term = "SSD backed PD Capacity"
+            case "local-ssd":
+                search_term = "SSD backed Local Storage"
+            case "pd-extreme":
+                search_term = "Extreme PD Capacity"
+            case "hyperdisk-throughput":
+                search_term = "Hyperdisk Throughput Capacity"
+            case "hyperdisk-ml":
+                search_term = "Hyperdisk ML Capacity"
+            case "hyperdisk-extreme":
+                search_term = "Hyperdisk Extreme Capacity"
+            case "hyperdisk-balanced":
+                search_term = "Hyperdisk Balanced Capacity"
+            case _:
+                raise ValueError(f"Unknown disk type: {disk['type']}")
+        # Filter skus to be in the same region as the VM
+        regional_price_skus = [sku for sku in pricelist if machine["region"] in sku["serviceRegions"]]
+        # All disks only have OnDemand billing
+        filtered_price_skus = [sku for sku in regional_price_skus if "OnDemand" in sku["category"]["usageType"]]
+        filtered_price_skus = [sku for sku in filtered_price_skus if "Storage" in sku["category"]["resourceFamily"]]
+        # Assume all disks are not regional, HA, confidential, etc.
+        # Use the following set of negative filters to remove those
+        filtered_price_skus = [sku for sku in filtered_price_skus if "Pools" not in sku["description"]]
+        filtered_price_skus = [sku for sku in filtered_price_skus if "Confidential" not in sku["description"]]
+        filtered_price_skus = [sku for sku in filtered_price_skus if "Regional" not in sku["description"]]
+        filtered_price_skus = [sku for sku in filtered_price_skus if "High Availability" not in sku["description"]]
+        # Filter by disk type
+        disk_sku = [sku for sku in filtered_price_skus if search_term in sku["description"]]
+        if len(disk_sku) != 1:
+            logging.error(f"Expected 1 sku for disk, got {len(disk_sku)}")
+            logging.error(f"Skus: {disk_sku}")
+            raise ValueError(f"Expected 1 sku for disk, got {len(disk_sku)}")
+
+        disk_price_gb_dollars = disk_sku[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["units"]
+        disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"]["nanos"] / (10**9)
+        # Disk prices are per month, need to convert to hourly, 730 hours in a month
+        disk_price_gb = (disk_price_gb_dollars + disk_price_gb_cents) / 730
+
+        price = disk_price_gb * disk["sizeGb"]
         total += price
     return total
 
