@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 import requests_mock
 
-from gcp_monitor import get_machine_hour, get_machine_info, initialize_gcp_variables
+from gcp_monitor import get_disk_hour, get_machine_hour, get_machine_info, initialize_gcp_variables
 
 test_metadata_payload = {
     "attributes": {"ssh-keys": "some-ssh-key-value"},
@@ -342,9 +342,8 @@ def test_get_machine_hour_n1_standard():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    with patch("gcp_monitor.get_machine_info", return_value=n1_machine):
-        actual = get_machine_hour(n1_machine, get_services_pricelist())
-        assert actual > 0
+    actual = get_machine_hour(n1_machine, get_services_pricelist())
+    assert actual > 0
 
 
 def test_get_machine_hour_n1_custom_ext():
@@ -361,9 +360,8 @@ def test_get_machine_hour_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    with patch("gcp_monitor.get_machine_info", return_value=n1_custom_extended_machine):
-        actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
-        assert actual > 0
+    actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
+    assert actual > 0
 
 
 def test_get_machine_hour_h100_mega():
@@ -380,9 +378,8 @@ def test_get_machine_hour_h100_mega():
         "gpu_count": 8,
         "gpu_type": "nvidia-h100-mega-80gb",
     }
-    with patch("gcp_monitor.get_machine_info", return_value=h100_mega_machine):
-        actual = get_machine_hour(h100_mega_machine, get_services_pricelist())
-        assert actual > 0
+    actual = get_machine_hour(h100_mega_machine, get_services_pricelist())
+    assert actual > 0
 
 
 def test_get_machine_hour_no_skus():
@@ -408,9 +405,8 @@ def test_get_machine_hour_no_skus():
             "resourceGroup": "Filler",
         }
     }]
-    with patch("gcp_monitor.get_machine_info", return_value=machine):
-        with pytest.raises(ValueError):
-            get_machine_hour(machine, pricelist=pricelist)
+    with pytest.raises(ValueError):
+        get_machine_hour(machine, pricelist=pricelist)
 
 
 def test_get_machine_hour_too_many_skus():
@@ -437,9 +433,8 @@ def test_get_machine_hour_too_many_skus():
         }
     }
     pricelist = get_services_pricelist() + [extra_sku]
-    with patch("gcp_monitor.get_machine_info", return_value=h100_mega_machine):
-        with pytest.raises(ValueError):
-            get_machine_hour(h100_mega_machine, pricelist=pricelist)
+    with pytest.raises(ValueError):
+        get_machine_hour(h100_mega_machine, pricelist=pricelist)
 
 
 def test_get_machine_hour_unknown_gpu():
@@ -456,6 +451,96 @@ def test_get_machine_hour_unknown_gpu():
         "gpu_count": 8,
         "gpu_type": "fake-gpu",
     }
-    with patch("gcp_monitor.get_machine_info", return_value=fake_gpu_machine):
-        with pytest.raises(ValueError):
-            get_machine_hour(fake_gpu_machine, get_services_pricelist())
+    with pytest.raises(ValueError):
+        get_machine_hour(fake_gpu_machine, get_services_pricelist())
+
+
+def test_get_disk_hour():
+    pd_standard_machine = {
+        "project": "642504272574",
+        "zone": "us-central1-a",
+        "region": "us-central1",
+        "name": "cromwell-monitor-test",
+        "type": "n1-standard-2",
+        "preemptible": True,
+        "disks": [{"type": "pd-standard", "sizeGb": 20}],
+        "owner": "test_owner",
+        "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
+    }
+    actual = get_disk_hour(pd_standard_machine, get_services_pricelist())
+    assert actual > 0
+
+
+def test_get_disk_hour_no_skus():
+    machine = {
+        "project": "642504272574",
+        "zone": "us-central1-a",
+        "region": "us-central1",
+        "name": "cromwell-monitor-test",
+        "type": "n1-standard-2",
+        "preemptible": True,
+        "disks": [{"type": "pd-standard", "sizeGb": 20}],
+        "owner": "test_owner",
+        "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
+    }
+    pricelist = [{
+        "serviceRegions": ["us-central1"],
+        "description": "Random machine type",
+        "category": {
+            "usageType": "OnDemand",
+            "resourceFamily": "Compute",
+            "resourceGroup": "Filler",
+        }
+    }]
+    with pytest.raises(ValueError):
+        get_disk_hour(machine, pricelist=pricelist)
+
+
+def test_get_disk_hour_too_many_skus():
+    pd_standard_machine = {
+        "project": "642504272574",
+        "zone": "us-central1-a",
+        "region": "us-central1",
+        "name": "cromwell-monitor-test",
+        "type": "n1-standard-2",
+        "preemptible": True,
+        "disks": [{"type": "pd-standard", "sizeGb": 20}],
+        "owner": "test_owner",
+        "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
+    }
+    extra_sku = {
+        "serviceRegions": ["us-central1"],
+        "description": "Storage PD Capacity",
+        "category": {
+            "usageType": "OnDemand",
+            "resourceFamily": "Storage",
+            "resourceGroup": "Disk",
+        }
+    }
+    pricelist = get_services_pricelist() + [extra_sku]
+    with pytest.raises(ValueError):
+        get_disk_hour(pd_standard_machine, pricelist=pricelist)
+
+
+def test_get_disk_hour_unknown_disk():
+    fake_disk_machine = {
+        "project": "642504272574",
+        "zone": "us-central1-a",
+        "region": "us-central1",
+        "name": "cromwell-monitor-test",
+        "type": "n1-standard-2",
+        "preemptible": True,
+        "disks": [{"type": "fake-disk", "sizeGb": 20}],
+        "owner": "test_owner",
+        "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
+    }
+    with pytest.raises(ValueError):
+        get_disk_hour(fake_disk_machine, get_services_pricelist())
