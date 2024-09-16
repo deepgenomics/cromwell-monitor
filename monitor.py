@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 from signal import SIGTERM, signal
 from time import time
 import requests

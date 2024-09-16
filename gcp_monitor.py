@@ -1,5 +1,4 @@
 import copy
-import json
 import logging
 from functools import reduce
 from os import environ
