@@ -20,7 +20,7 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables(nvml_ok: bool, services_pricelist: dict = None):
+def initialize_gcp_variables(nvml_ok: bool, services_pricelist: List[dict] = None):
     gcp_variables = {}
 
     gcp_variables["PRICELIST"] = services_pricelist
