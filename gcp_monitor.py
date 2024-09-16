@@ -48,10 +48,10 @@ def initialize_gcp_variables(nvml_ok: bool, services_pricelist: dict = None):
     gcp_variables["REPORT_TIME_SEC_MIN"] = 60
     gcp_variables["REPORT_TIME_SEC"] = gcp_variables["REPORT_TIME_SEC_MIN"]
 
+    gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
     # Get billing rates if pricing data is available
     if gcp_variables["PRICING_AVAILABLE"]:
         try:
-            gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
             gcp_variables["COST_PER_SEC"] = (
                 get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
                 + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
