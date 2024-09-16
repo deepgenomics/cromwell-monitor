@@ -320,7 +320,9 @@ def get_machine_hour(machine, pricelist):
     ]
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
-    machine_search_term = usage_type + " Custom" if machine_is_n1_custom else machine_prefix
+    machine_search_term = (
+        usage_type + " Custom" if machine_is_n1_custom else machine_prefix
+    )
     machine_type_skus = [
         sku for sku in usage_type_skus if machine_search_term in sku["description"]
     ]
@@ -329,10 +331,14 @@ def get_machine_hour(machine, pricelist):
         memory_skus = [sku for sku in machine_type_skus if "Ram" in sku["description"]]
     else:
         core_skus = [
-            sku for sku in machine_type_skus if "CPU" in sku["category"]["resourceGroup"]
+            sku
+            for sku in machine_type_skus
+            if "CPU" in sku["category"]["resourceGroup"]
         ]
         memory_skus = [
-            sku for sku in machine_type_skus if "RAM" in sku["category"]["resourceGroup"]
+            sku
+            for sku in machine_type_skus
+            if "RAM" in sku["category"]["resourceGroup"]
         ]
 
     if machine_is_custom or machine_is_n1_custom:
@@ -412,24 +418,30 @@ def get_machine_hour(machine, pricelist):
 
     # Pricing api splits the price into units and nanos.
     # Units are whole dollars, nanos are cents but represented as nanos of a dollar
-    cpu_dollars_price = int(core_skus[0]["pricingInfo"][0]["pricingExpression"][
-        "tieredRates"
-    ][-1]["unitPrice"]["units"])
+    cpu_dollars_price = int(
+        core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
     cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
         "tieredRates"
     ][-1]["unitPrice"]["nanos"] / (10**9)
     cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
-    ram_dollars_price = int(memory_skus[0]["pricingInfo"][0]["pricingExpression"][
-        "tieredRates"
-    ][-1]["unitPrice"]["units"])
+    ram_dollars_price = int(
+        memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
     ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
         "tieredRates"
     ][-1]["unitPrice"]["nanos"] / (10**9)
     ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
     if num_gpus > 0:
-        gpu_dollars_price = int(gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
-            "tieredRates"
-        ][-1]["unitPrice"]["units"])
+        gpu_dollars_price = int(
+            gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+                "unitPrice"
+            ]["units"]
+        )
         gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
             "tieredRates"
         ][-1]["unitPrice"]["nanos"] / (10**9)
