@@ -213,6 +213,13 @@ def get_machine_info(compute):
     )
 
     disks = [get_disk(compute, project, zone, disk) for disk in instance["disks"]]
+    gpu_data: List[dict] | None = instance.get("guestAccelerators", None)
+    # Can't create machines with multiple GPU types, so just get the first element
+    gpu_count = gpu_data[0].get("acceleratorCount", 0) if gpu_data else 0
+    gpu_type = gpu_data[0].get("acceleratorType", None) if gpu_data else None
+    # By default accelerator type is in the form of
+    # projects/{project}/zones/{zone}/acceleratorTypes/{type}
+    gpu_type = gpu_type.split("/")[-1] if gpu_type else None
 
     machine_info = {
         "project": project,
@@ -222,6 +229,8 @@ def get_machine_info(compute):
         "type": instance["machineType"].split("/")[-1],
         "preemptible": instance["scheduling"]["preemptible"],
         "disks": disks,
+        "gpu_count": gpu_count,
+        "gpu_type": gpu_type,
     }
 
     if "owner" in instance["labels"].keys():
@@ -265,11 +274,8 @@ def get_machine_hour(machine, pricelist):
     if num_cpus is None:
         raise ValueError("Could not determine number of CPUs")
     num_ram_gb = ps.virtual_memory().total / (1024**3)  # convert bytes to GiB
-    num_gpus = machine["guestAccelerators"].get("acceleratorCount", 0)
-    gpu_type: str | None = machine["guestAccelerators"].get("acceleratorType", None)
-    # By default accelerator type is in the form of
-    # projects/{project}/zones/{zone}/acceleratorTypes/{type}
-    gpu_type = gpu_type.split("/")[-1] if gpu_type else None
+    num_gpus = machine.get("gpu_count", 0)
+    gpu_type: str | None = machine.get("gpu_type", None)
 
     # Initial sku filtering results will go in these vars
     core_skus: List[dict] | None = None
