@@ -265,7 +265,7 @@ def get_price_key(key, preemptible):
 def get_machine_hour(machine, pricelist):
     machine_prefix = machine["type"].split("-")[0].upper()
     # n1 custom machine api responses differ from other machine families
-    machine_is_n1_custom = machine_prefix == "custom"
+    machine_is_n1_custom = machine_prefix == "CUSTOM"
     # standard, custom, highmem, highcpu, etc.
     machine_is_custom = True if machine["type"].split("-")[1] == "custom" else False
     machine_is_extended_memory: bool = machine["type"].split("-")[-1] == "ext"
@@ -290,7 +290,7 @@ def get_machine_hour(machine, pricelist):
     ]
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
-    machine_search_term = str(usage_type) + " Custom" if machine_is_n1_custom else machine_prefix
+    machine_search_term = usage_type + " Custom" if machine_is_n1_custom else machine_prefix
     machine_type_skus = [
         sku for sku in usage_type_skus if machine_search_term in sku["description"]
     ]
