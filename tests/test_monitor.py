@@ -308,6 +308,8 @@ def test_get_machine_info(**kwargs):
         "disks": [{"type": "pd-standard", "sizeGb": 20}],
         "owner": "test_owner",
         "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
     }
 
     test_environ_variables = {
