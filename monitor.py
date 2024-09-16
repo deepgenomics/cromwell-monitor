@@ -3,6 +3,7 @@
 import logging
 from signal import SIGTERM, signal
 from time import time
+from typing import List
 import requests
 import gcp_monitor
 
@@ -18,7 +19,7 @@ def signal_handler(signum, frame):
     container_running = False
 
 
-def get_pricelist_dict() -> dict:
+def get_pricelist_dict() -> List[dict]:
     """
     Query the cloudbilling api for current compute engine SKUs and prices,
     then collate the paginated json responses into a single json file
