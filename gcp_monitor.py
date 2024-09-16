@@ -520,9 +520,9 @@ def get_disk_hour(machine, pricelist):
             logging.error(f"Skus: {disk_sku}")
             raise ValueError(f"Expected 1 sku for disk, got {len(disk_sku)}")
 
-        disk_price_gb_dollars = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
+        disk_price_gb_dollars = int(disk_sku[0]["pricingInfo"][0]["pricingExpression"][
             "tieredRates"
-        ][-1]["unitPrice"]["units"]
+        ][-1]["unitPrice"]["units"])
         disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
             "tieredRates"
         ][-1]["unitPrice"]["nanos"] / (10**9)
