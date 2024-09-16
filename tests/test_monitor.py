@@ -265,14 +265,12 @@ def test_initialize_gcp_variables(**kwargs):
         "owner": "test_owner",
         "entrance_wdl": "label1",
     }
-    with open("tests/data/pricelist.json") as reader:
-        test_pricelist = json.load(reader)["gcp_price_list"]
-        with patch("gcp_monitor.get_pricelist", return_value=test_pricelist), patch(
-            "gcp_monitor.get_metric", return_value=test_metric_response
-        ), patch.dict("os.environ", test_environ_variables), patch(
-            "gcp_monitor.get_machine_info", return_value=test_machine_info_output
-        ):
-            actual_instance, _ = initialize_gcp_variables()
+
+    with patch("gcp_monitor.get_metric", return_value=test_metric_response
+               ), patch.dict("os.environ", test_environ_variables), patch(
+        "gcp_monitor.get_machine_info", return_value=test_machine_info_output
+    ):
+        actual_instance, _ = initialize_gcp_variables()
 
     assert actual_instance["WORKFLOW_ID"] == "17399163265929080700"
     assert actual_instance["TASK_CALL_NAME"] == "unit_test"
