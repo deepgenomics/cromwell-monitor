@@ -3,6 +3,7 @@ import logging
 from functools import reduce
 from os import environ
 import os
+import re
 from time import sleep, time
 from typing import List
 
@@ -320,12 +321,17 @@ def get_machine_hour(machine, pricelist):
     ]
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
-    machine_search_term = (
-        usage_type + " Custom" if machine_is_n1_custom else machine_prefix
-    )
-    machine_type_skus = [
-        sku for sku in usage_type_skus if machine_search_term in sku["description"]
-    ]
+    if machine_is_n1_custom and usage_type == "Preemptible":
+        def machine_filter(sku): return "Preemptible Custom" in sku["description"]
+    elif machine_is_n1_custom and usage_type == "OnDemand":
+        # Cant use "Custom in description" because it will match other machine families
+        # Need to ensure that Custom is the first word in the description to get
+        # OnDemand N1 Custom machines
+        def machine_filter(sku): return bool(re.search(r"^Custom ", sku["description"]))
+    else:
+        def machine_filter(sku): return machine_prefix in sku["description"]
+    machine_type_skus = [sku for sku in usage_type_skus if machine_filter(sku)]
+
     if machine_prefix == "N1":  # N1 Standard machines need different filters
         core_skus = [sku for sku in machine_type_skus if "Core" in sku["description"]]
         memory_skus = [sku for sku in machine_type_skus if "Ram" in sku["description"]]

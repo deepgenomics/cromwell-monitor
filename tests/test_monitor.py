@@ -357,7 +357,25 @@ def test_get_machine_hour_n1_standard():
     assert actual > 0
 
 
-def test_get_machine_hour_n1_custom_ext():
+def test_get_machine_hour_ondemand_n1_custom_ext():
+    n1_custom_extended_machine = {
+        "project": "642504272574",
+        "zone": "us-central1-a",
+        "region": "us-central1",
+        "name": "cromwell-monitor-test",
+        "type": "custom-2-4096-ext",
+        "preemptible": False,
+        "disks": [{"type": "pd-standard", "sizeGb": 20}],
+        "owner": "test_owner",
+        "entrance_wdl": "label1",
+        "gpu_count": 0,
+        "gpu_type": None,
+    }
+    actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
+    assert actual > 0
+
+
+def test_get_machine_hour_preemptible_n1_custom_ext():
     n1_custom_extended_machine = {
         "project": "642504272574",
         "zone": "us-central1-a",
