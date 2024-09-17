@@ -675,6 +675,7 @@ def report(gcp_variables, metrics_client):
     create_time_series(
         gcp_variables,
         metrics_client,
+        series,
     )
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
 
