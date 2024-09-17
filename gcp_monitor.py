@@ -1,9 +1,11 @@
 import copy
-import json
 import logging
 from functools import reduce
 from os import environ
+import os
+import re
 from time import sleep, time
+from typing import List
 
 import psutil as ps
 import requests
@@ -18,11 +20,12 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables():
+def initialize_gcp_variables(services_pricelist: List[dict] = None):
     gcp_variables = {}
 
-    # json that contains GCP pricing. used for cost metric.
-    gcp_variables["PRICELIST_JSON"] = "pricelist.json"
+    gcp_variables["PRICELIST"] = services_pricelist
+    # Var to track if should attempt to add pricing metrics
+    gcp_variables["PRICING_AVAILABLE"] = True if services_pricelist else False
 
     # initialize Google API client
     gcp_variables["compute"] = google_api("compute", "v1")
@@ -45,13 +48,20 @@ def initialize_gcp_variables():
     gcp_variables["REPORT_TIME_SEC_MIN"] = 60
     gcp_variables["REPORT_TIME_SEC"] = gcp_variables["REPORT_TIME_SEC_MIN"]
 
-    # Get billing rates
     gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
-    gcp_variables["PRICELIST"] = get_pricelist(gcp_variables["PRICELIST_JSON"])
-    gcp_variables["COST_PER_SEC"] = (
-        get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-        + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-    ) / 3600
+    # Get billing rates if pricing data is available
+    if gcp_variables["PRICING_AVAILABLE"]:
+        try:
+            gcp_variables["COST_PER_SEC"] = (
+                get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+                + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+            ) / 3600
+        except ValueError as e:
+            logging.error(f"Failed to get pricing data: {e}")
+            logging.warning(
+                "Will attempt to continue monitoring without pricing data..."
+            )
+            gcp_variables["PRICING_AVAILABLE"] = False
 
     # Get VectorHive2 related labels
     gcp_variables["OWNER"] = (
@@ -178,15 +188,15 @@ def initialize_gcp_variables():
         "{writes}/s",
         "Disk write IOPS in a Cromwell task call",
     )
-
-    gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
-        gcp_variables,
-        metrics_client,
-        "runtime_cost_estimate",
-        "DOUBLE",
-        "USD",
-        "Cumulative runtime cost estimate for a Cromwell task call",
-    )
+    if gcp_variables["PRICING_AVAILABLE"]:
+        gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
+            gcp_variables,
+            metrics_client,
+            "runtime_cost_estimate",
+            "DOUBLE",
+            "USD",
+            "Cumulative runtime cost estimate for a Cromwell task call",
+        )
 
     return gcp_variables, metrics_client
 
@@ -204,6 +214,13 @@ def get_machine_info(compute):
     )
 
     disks = [get_disk(compute, project, zone, disk) for disk in instance["disks"]]
+    gpu_data: List[dict] | None = instance.get("guestAccelerators", None)
+    # Can't create machines with multiple GPU types, so just get the first element
+    gpu_count = gpu_data[0].get("acceleratorCount", 0) if gpu_data else 0
+    gpu_type = gpu_data[0].get("acceleratorType", None) if gpu_data else None
+    # By default accelerator type is in the form of
+    # projects/{project}/zones/{zone}/acceleratorTypes/{type}
+    gpu_type = gpu_type.split("/")[-1] if gpu_type else None
 
     machine_info = {
         "project": project,
@@ -213,6 +230,8 @@ def get_machine_info(compute):
         "type": instance["machineType"].split("/")[-1],
         "preemptible": instance["scheduling"]["preemptible"],
         "disks": disks,
+        "gpu_count": gpu_count,
+        "gpu_type": gpu_type,
     }
 
     if "owner" in instance["labels"].keys():
@@ -240,50 +259,253 @@ def get_disk(compute, project, zone, disk):
         }
 
 
-def get_pricelist(pricelist_json):
-    with open(pricelist_json, "r") as f:
-        return json.load(f)["gcp_price_list"]
-
-
 def get_price_key(key, preemptible):
     return "CP-COMPUTEENGINE-" + key + ("-PREEMPTIBLE" if preemptible else "")
 
 
 def get_machine_hour(machine, pricelist):
-    if machine["type"].startswith("custom"):
-        _, core, memory = machine["type"].split("-")
-        core_key = get_price_key("CUSTOM-VM-CORE", machine["preemptible"])
-        memory_key = get_price_key("CUSTOM-VM-RAM", machine["preemptible"])
-        return (
-            pricelist[core_key][machine["region"]] * int(core)
-            + pricelist[memory_key][machine["region"]] * int(memory) / 2 ** 10
-        )
+    machine_prefix = machine["type"].split("-")[0].upper()
+    # n1 custom machine api responses differ from other machine families
+    machine_is_n1_custom = machine_prefix == "CUSTOM"
+    # standard, custom, highmem, highcpu, etc.
+    machine_is_custom = True if machine["type"].split("-")[1] == "custom" else False
+    machine_is_extended_memory: bool = machine["type"].split("-")[-1] == "ext"
+    usage_type = "Preemptible" if machine["preemptible"] else "OnDemand"
+    num_cpus: int | None = os.cpu_count()
+    if num_cpus is None:
+        raise ValueError("Could not determine number of CPUs")
+    num_ram_gb = ps.virtual_memory().total / (1024**3)  # convert bytes to GiB
+    num_gpus = machine.get("gpu_count", 0)
+    gpu_type: str | None = machine.get("gpu_type", None)
+
+    # Initial sku filtering results will go in these vars
+    core_skus: List[dict] | None = None
+    memory_skus: List[dict] | None = None
+    gpu_skus: List[dict] | None = None
+    # Do a series of filters on the pricelist to get the correct sku
+    regional_skus = [
+        sku for sku in pricelist if machine["region"] in sku["serviceRegions"]
+    ]
+    usage_type_skus = [
+        sku for sku in regional_skus if usage_type in sku["category"]["usageType"]
+    ]
+    # Need to concat usage type and custom because just "Custom" will return
+    # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
+    if machine_is_n1_custom and usage_type == "Preemptible":
+        def machine_filter(sku): return "Preemptible Custom" in sku["description"]
+    elif machine_is_n1_custom and usage_type == "OnDemand":
+        # Cant use "Custom in description" because it will match other machine families
+        # Need to ensure that Custom is the first word in the description to get
+        # OnDemand N1 Custom machines
+        def machine_filter(sku): return bool(re.search(r"^Custom ", sku["description"]))
     else:
-        price_key = get_price_key(
-            "VMIMAGE-" + machine["type"].upper(), machine["preemptible"]
+        def machine_filter(sku): return machine_prefix in sku["description"]
+    machine_type_skus = [sku for sku in usage_type_skus if machine_filter(sku)]
+
+    if machine_prefix == "N1":  # N1 Standard machines need different filters
+        core_skus = [sku for sku in machine_type_skus if "Core" in sku["description"]]
+        memory_skus = [sku for sku in machine_type_skus if "Ram" in sku["description"]]
+    else:
+        core_skus = [
+            sku
+            for sku in machine_type_skus
+            if "CPU" in sku["category"]["resourceGroup"]
+        ]
+        memory_skus = [
+            sku
+            for sku in machine_type_skus
+            if "RAM" in sku["category"]["resourceGroup"]
+        ]
+
+    if machine_is_custom or machine_is_n1_custom:
+        # Filter out non-custom machines from core and memory skus
+        core_skus = [sku for sku in core_skus if "Custom" in sku["description"]]
+        memory_skus = [sku for sku in memory_skus if "Custom" in sku["description"]]
+    else:
+        # Filter out custom machines from core and memory skus
+        core_skus = [sku for sku in core_skus if "Custom" not in sku["description"]]
+        memory_skus = [sku for sku in memory_skus if "Custom" not in sku["description"]]
+
+    if machine_is_extended_memory:
+        memory_skus = [sku for sku in memory_skus if "Extended" in sku["description"]]
+    else:
+        memory_skus = [
+            sku for sku in memory_skus if "Extended" not in sku["description"]
+        ]
+
+    if num_gpus > 0:
+        # Convert GPU type to name used in pricing API
+        match gpu_type:
+            case "nvidia-tesla-t4":
+                gpu_type = "T4"
+            case "nvidia-tesla-v100":
+                gpu_type = "V100"
+            case "nvidia-tesla-p100":
+                gpu_type = "P100"
+            case "nvidia-tesla-p4":
+                gpu_type = "P4"
+            case "nvidia-l4":
+                gpu_type = "L4"
+            case "nvidia-tesla-a100":
+                gpu_type = "A100 40GB"
+            case "nvidia-a100-80gb":
+                gpu_type = "A100 80GB"
+            case "nvidia-h100-80gb":
+                # add 'GPU' so this case isnt a substring of H100 Mega
+                gpu_type = "H100 80GB GPU"
+            case "nvidia-h100-mega-80gb":
+                gpu_type = "H100 80GB Plus"
+            case _:
+                raise ValueError(f"Unknown GPU type: {gpu_type}")
+
+        gpu_resource_skus = [
+            sku for sku in pricelist if "GPU" in sku["category"]["resourceGroup"]
+        ]
+        gpu_region_skus = [
+            sku
+            for sku in gpu_resource_skus
+            if machine["region"] in sku["serviceRegions"]
+        ]
+        gpu_type_skus = [
+            sku for sku in gpu_region_skus if gpu_type in sku["description"]
+        ]
+        gpu_skus = [
+            sku for sku in gpu_type_skus if usage_type in sku["category"]["usageType"]
+        ]
+        # Edge-case where h100 mega gpu machines have
+        # different sku names for CPU and RAM
+        if gpu_type == "H100 80GB Plus":
+            core_skus = [sku for sku in core_skus if "A3Plus" in sku["description"]]
+            memory_skus = [sku for sku in memory_skus if "A3Plus" in sku["description"]]
+
+    # Check that only 1 sku is returned for each category
+    if len(core_skus) != 1:
+        logging.error(f"Expected 1 sku for CPU, got {len(core_skus)}")
+        logging.error(f"Skus: {core_skus}")
+        raise ValueError(f"Expected 1 sku for CPU, got {len(core_skus)}")
+    if len(memory_skus) != 1:
+        logging.error(f"Expected 1 sku for RAM, got {len(memory_skus)}")
+        logging.error(f"Skus: {memory_skus}")
+        raise ValueError(f"Expected 1 sku for RAM, got {len(memory_skus)}")
+    if num_gpus > 0 and len(gpu_skus) != 1:
+        logging.error(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
+        logging.error(f"Skus: {gpu_skus}")
+        raise ValueError(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
+
+    # Pricing api splits the price into units and nanos.
+    # Units are whole dollars, nanos are cents but represented as nanos of a dollar
+    cpu_dollars_price = int(
+        core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
+    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
+    cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
+    ram_dollars_price = int(
+        memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
+    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
+    ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
+    if num_gpus > 0:
+        gpu_dollars_price = int(
+            gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+                "unitPrice"
+            ]["units"]
         )
-        return pricelist[price_key][machine["region"]]
+        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["nanos"] / (10**9)
+        gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
+        return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
+    else:
+        return cpu_price_per_hr + ram_price_per_hr
 
 
 def get_disk_hour(machine, pricelist):
+    # This function will ignore Hyperdisk Throughput Storage Pools cost since it is
+    # billed monthly based on resources allocated to the pool, not the VM
     total = 0
     for disk in machine.get("disks"):
-        price_key = "CP-COMPUTEENGINE-"
-        if disk["type"] == "pd-standard" or disk["type"] == "pd-balanced":
-            price_key += "STORAGE-PD-CAPACITY"
-        elif disk["type"] == "pd-ssd":
-            price_key += "STORAGE-PD-SSD"
-        elif disk["type"] == "local-ssd":
-            price_key += "LOCAL-SSD"
-            if machine["preemptible"]:
-                price_key += "-PREEMPTIBLE"
-        assert price_key in pricelist.keys(), f"Unknown disk type: {disk['type']}"
-        assert machine["region"] in pricelist[price_key].keys(), (
-            f"Unknown region: {machine['region']} for disk type: {disk['type']}"
-        )
-        price = pricelist[price_key][machine["region"]] * disk["sizeGb"]
-        if disk["type"].startswith("pd"):
-            price /= 730  # hours per month
+        search_term: str | None = None
+        match disk["type"]:
+            case "pd-standard":
+                search_term = "Storage PD Capacity"
+            case "pd-balanced":
+                search_term = "Balanced PD Capacity"
+            case "pd-ssd":
+                search_term = "SSD backed PD Capacity"
+            case "local-ssd":
+                search_term = "SSD backed Local Storage"
+            case "pd-extreme":
+                search_term = "Extreme PD Capacity"
+            case "hyperdisk-throughput":
+                search_term = "Hyperdisk Throughput Capacity"
+            case "hyperdisk-ml":
+                search_term = "Hyperdisk ML Capacity"
+            case "hyperdisk-extreme":
+                search_term = "Hyperdisk Extreme Capacity"
+            case "hyperdisk-balanced":
+                search_term = "Hyperdisk Balanced Capacity"
+            case _:
+                raise ValueError(f"Unknown disk type: {disk['type']}")
+        # Filter skus to be in the same region as the VM
+        regional_price_skus = [
+            sku for sku in pricelist if machine["region"] in sku["serviceRegions"]
+        ]
+        # All disks only have OnDemand billing
+        filtered_price_skus = [
+            sku
+            for sku in regional_price_skus
+            if "OnDemand" in sku["category"]["usageType"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "Storage" in sku["category"]["resourceFamily"]
+        ]
+        # Assume all disks are not regional, HA, confidential, etc.
+        # Use the following set of negative filters to remove those
+        filtered_price_skus = [
+            sku for sku in filtered_price_skus if "Pools" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "Confidential" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku for sku in filtered_price_skus if "Regional" not in sku["description"]
+        ]
+        filtered_price_skus = [
+            sku
+            for sku in filtered_price_skus
+            if "High Availability" not in sku["description"]
+        ]
+        # Filter by disk type
+        disk_sku = [
+            sku for sku in filtered_price_skus if search_term in sku["description"]
+        ]
+        if len(disk_sku) != 1:
+            logging.error(f"Expected 1 sku for disk, got {len(disk_sku)}")
+            logging.error(f"Skus: {disk_sku}")
+            raise ValueError(f"Expected 1 sku for disk, got {len(disk_sku)}")
+
+        disk_price_gb_dollars = int(disk_sku[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["units"])
+        disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["nanos"] / (10**9)
+        # Disk prices are per month, need to convert to hourly, 730 hours in a month
+        disk_price_gb = (disk_price_gb_dollars + disk_price_gb_cents) / 730
+
+        price = disk_price_gb * disk["sizeGb"]
         total += price
     return total
 
@@ -340,7 +562,7 @@ def disk_io(param):
 
 
 def format_gb(value_bytes):
-    return "%.1f" % round(value_bytes / 2 ** 30, 1)
+    return "%.1f" % round(value_bytes / 2**30, 1)
 
 
 def get_metric(gcp_variables, metrics_client, key, value_type, unit, description):
@@ -396,55 +618,50 @@ def get_time_series(gcp_variables, metric_descriptor, value):
 
 
 def report(gcp_variables, metrics_client):
-
     time_delta = time() - gcp_variables["last_time"]
-    create_time_series(
-        gcp_variables,
-        metrics_client,
-        [
-            get_time_series(
-                gcp_variables,
-                gcp_variables["CPU_UTILIZATION_METRIC"],
-                {"double_value": ps.cpu_percent()},
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["MEMORY_UTILIZATION_METRIC"],
-                {
-                    "double_value": gcp_variables["memory_used"]
-                    / gcp_variables["MEMORY_SIZE"]
-                    * 100
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_UTILIZATION_METRIC"],
-                {
-                    "double_value": gcp_variables["disk_used"]
-                    / gcp_variables["DISK_SIZE"]
-                    * 100
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_READS_METRIC"],
-                {
-                    "double_value": (
-                        disk_io("read_count") - gcp_variables["disk_reads"]
-                    )
-                    / time_delta
-                },
-            ),
-            get_time_series(
-                gcp_variables,
-                gcp_variables["DISK_WRITES_METRIC"],
-                {
-                    "double_value": (
-                        disk_io("write_count") - gcp_variables["disk_writes"]
-                    )
-                    / time_delta
-                },
-            ),
+    series = [
+        get_time_series(
+            gcp_variables,
+            gcp_variables["CPU_UTILIZATION_METRIC"],
+            {"double_value": ps.cpu_percent()},
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["MEMORY_UTILIZATION_METRIC"],
+            {
+                "double_value": gcp_variables["memory_used"]
+                / gcp_variables["MEMORY_SIZE"]
+                * 100
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_UTILIZATION_METRIC"],
+            {
+                "double_value": gcp_variables["disk_used"]
+                / gcp_variables["DISK_SIZE"]
+                * 100
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_READS_METRIC"],
+            {
+                "double_value": (disk_io("read_count") - gcp_variables["disk_reads"])
+                / time_delta
+            },
+        ),
+        get_time_series(
+            gcp_variables,
+            gcp_variables["DISK_WRITES_METRIC"],
+            {
+                "double_value": (disk_io("write_count") - gcp_variables["disk_writes"])
+                / time_delta
+            },
+        ),
+    ]
+    if gcp_variables["PRICING_AVAILABLE"]:
+        series.append(
             get_time_series(
                 gcp_variables,
                 gcp_variables["COST_ESTIMATE_METRIC"],
@@ -453,7 +670,12 @@ def report(gcp_variables, metrics_client):
                     * gcp_variables["COST_PER_SEC"]
                 },
             ),
-        ],
+        )
+
+    create_time_series(
+        gcp_variables,
+        metrics_client,
+        series,
     )
     logging.info("Successfully wrote time series to Cloud Monitoring API.")
 
