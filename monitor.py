@@ -50,11 +50,14 @@ def get_pricelist_dict() -> List[dict]:
     }
     # Access token expires in 1hr but this is ok because we only call
     # the api at the start of monitoring
-    headers = {"Authorization": f"Bearer {get_access_token()}",
-               }
+    headers = {
+        "Authorization": f"Bearer {get_access_token()}",
+    }
     res = requests.get(
         "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
-        params=query_params, headers=headers)
+        params=query_params,
+        headers=headers,
+    )
     res.raise_for_status()
     services_json = res.json()
     next_page_token = services_json.get("nextPageToken", "")
@@ -63,7 +66,9 @@ def get_pricelist_dict() -> List[dict]:
         query_params["pageToken"] = next_page_token
         res = requests.get(
             "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
-            params=query_params, headers=headers)
+            params=query_params,
+            headers=headers,
+        )
         services_json = res.json()
         next_page_token = services_json.get("nextPageToken", "")
         services_dict += services_json.get("skus", [])
