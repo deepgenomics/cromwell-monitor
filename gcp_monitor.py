@@ -234,8 +234,6 @@ def get_machine_info(compute):
     )
 
     disks = [get_disk(compute, project, zone, disk) for disk in instance["disks"]]
-    # gpuCount = pynvml.nvmlDeviceGetCount()
-    # gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(gpuCount)]
 
     machine_info = {
         "project": project,
