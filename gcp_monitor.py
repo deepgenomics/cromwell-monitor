@@ -243,8 +243,6 @@ def get_machine_info(compute):
         "type": instance["machineType"].split("/")[-1],
         "preemptible": instance["scheduling"]["preemptible"],
         "disks": disks,
-        # TODO not sure that deep-copying the pynvml objects is safe
-        # "gpus": gpus,
     }
 
     if "owner" in instance["labels"].keys():
