@@ -287,7 +287,7 @@ def test_initialize_gcp_variables(**kwargs):
         for metric in [
             "UTILIZATION_METRIC",
             "MEM_UTILIZATION_METRIC",
-            "MEM_USED_METRIC",
+            "MEM_ALLOCATED_METRIC",
         ]:
             assert f"GPU{i}_{metric}" in actual_instance
 

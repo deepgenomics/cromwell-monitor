@@ -200,10 +200,10 @@ def initialize_gcp_variables(nvml_ok: bool):
                 f"GPU{i}: Percent of time over the past sample period during which global (device) memory was being read or written",
             )
 
-            gcp_variables[f"GPU{i}_MEM_USED_METRIC"] = get_metric(
+            gcp_variables[f"GPU{i}_MEM_ALLOCATED_METRIC"] = get_metric(
                 gcp_variables,
                 metrics_client,
-                f"gpu{i}_mem_used",
+                f"gpu{i}_mem_allocated",
                 "INT64",
                 "%",
                 f"GPU{i}: Percent of memory utilized (used / available)",
@@ -461,7 +461,7 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False):
         *[
             get_time_series(
                 gcp_variables,
-                gcp_variables[f"GPU{i}_MEM_USED_METRIC"],
+                gcp_variables[f"GPU{i}_MEM_ALLOCATED_METRIC"],
                 {"int64_value": (gpu_mem_info[i].memory)},
             )
             for i in range(num_gpus)
