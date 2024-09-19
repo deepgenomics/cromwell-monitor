@@ -458,7 +458,7 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False):
             get_time_series(
                 gcp_variables,
                 gcp_variables[f"GPU{i}_MEM_ALLOCATED_METRIC"],
-                {"int64_value": (gpu_mem_info[i].memory)},
+                {"int64_value": 100 * (gpu_mem_info[i].used) / (gpu_mem_info[i].total)},
             )
             for i in range(num_gpus)
         ],
