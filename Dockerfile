@@ -1,19 +1,13 @@
-FROM python:alpine
+FROM python:3-slim-bullseye
 
 WORKDIR /opt
 
 ADD requirements.txt ./
 
-RUN apk add --no-cache \
-      build-base \
-      libstdc++ \
-      linux-headers \
-    && \
-    pip install -r requirements.txt && \
-    wget http://cloudpricingcalculator.appspot.com/static/data/pricelist.json && \
-    apk del \
-      build-base \
-      linux-headers
+RUN pip install -r requirements.txt && \
+    apt-get update && \
+    apt-get install -y wget && \
+    wget http://cloudpricingcalculator.appspot.com/static/data/pricelist.json
 
 ADD monitor.py ./
 

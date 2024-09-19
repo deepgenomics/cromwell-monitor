@@ -3,3 +3,4 @@ google-cloud-monitoring
 psutil
 grpcio-tools
 requests
+nvidia-ml-py
