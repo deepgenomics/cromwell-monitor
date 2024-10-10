@@ -34,13 +34,16 @@ def get_access_token() -> str:
 
 
 def get_pricelist_dict() -> List[dict]:
-    """
-    Query the cloudbilling api for current compute engine SKUs and prices,
-    then collate the paginated json responses into a single json file
+    """Query the cloudbilling api for current compute engine SKUs and prices,
+    then collate the paginated json responses into a single json file. Then returns
+    the skus in a list of dict objects
 
-    Returns a dict containing the SKUs and prices of all compute engine services,
-    or in the event of failure throws the appropriate
-    requests.exceptions.RequestException
+    :raises requests.exceptions.RequestException: If the request to the cloudbilling 
+        api fails
+    :return: A List of dicts containing the SKUs and prices of all compute engine
+        services. See link below for how each sku dict is organized
+        https://cloud.google.com/billing/docs/reference/rest/v1/services.skus/list#Sku
+    :rtype: List[dict]
     """
     query_params = {
         "pageSize": 5000,
