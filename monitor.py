@@ -67,6 +67,7 @@ def get_pricelist_dict() -> List[dict]:
     while next_page_token != "":
         query_params["pageToken"] = next_page_token
         res = requests.get(
+            # 6F81-5844-456A is the service id for compute engine
             "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
             params=query_params,
             headers=headers,
