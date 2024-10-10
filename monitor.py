@@ -23,8 +23,7 @@ def signal_handler(signum, frame):
 
 def get_access_token() -> str:
     """
-    Get the access token from the metadata server
-    Returns the access token as a string
+    https://cloud.google.com/docs/authentication/rest#metadata-server
     """
     res = requests.get(
         "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
