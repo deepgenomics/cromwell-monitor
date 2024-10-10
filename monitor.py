@@ -31,6 +31,9 @@ def get_access_token() -> str:
     )
     res.raise_for_status()
     if "access_token" not in res.json():
+        logging.error(
+            f"Error getting access token for authentication to GCP REST API: {res.json()}"
+        )
         raise ValueError("No access token in response")
     return res.json()["access_token"]
 
@@ -40,7 +43,7 @@ def get_pricelist_dict() -> List[dict]:
     then collate the paginated json responses into a single json file. Then returns
     the skus in a list of dict objects
 
-    :raises requests.exceptions.RequestException: If the request to the cloudbilling 
+    :raises requests.exceptions.RequestException: If the request to the cloudbilling
         api fails
     :return: A List of dicts containing the SKUs and prices of all compute engine
         services. See link below for how each sku dict is organized
@@ -60,7 +63,11 @@ def get_pricelist_dict() -> List[dict]:
         params=query_params,
         headers=headers,
     )
-    res.raise_for_status()
+    try:
+        res.raise_for_status()
+    except requests.HTTPError as e:
+        logging.error(f"Error getting pricelist: {e}")
+        raise
     services_json = res.json()
     next_page_token = services_json.get("nextPageToken", "")
     services_dict = services_json.get("skus", [])
@@ -95,13 +102,16 @@ def main():
         logging.info(f"NVML initialization failed (probably no GPUs): {e}")
         nvml_ok = False
 
+    pricing_available = False
     try:
+        pricing_available = True
         services_pricelist: dict = get_pricelist_dict()
         gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables(
-            nvml_ok, services_pricelist
+            nvml_ok, services_pricelist, pricing_available
         )
     except (requests.exceptions.RequestException, ValueError) as e:
-        logging.error(f"Failed to retrieve pricelist: {e}")
+        pricing_available = False
+        logging.error(f"Error using pricing data for metrics: {e}")
         logging.warning("Will attempt to continue monitoring without pricing data...")
         gcp_instance, metrics_client = gcp_monitor.initialize_gcp_variables(nvml_ok)
 
@@ -115,7 +125,9 @@ def main():
                 or (time() - gcp_instance["last_time"])
                 >= gcp_instance["REPORT_TIME_SEC"]
             ):
-                gcp_instance = gcp_monitor.report(gcp_instance, metrics_client, nvml_ok)
+                gcp_instance = gcp_monitor.report(
+                gcp_instance, metrics_client, nvml_ok, pricing_available
+            )
                 gcp_instance = gcp_monitor.reset(gcp_instance)
     finally:
         if nvml_ok:

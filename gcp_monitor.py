@@ -21,13 +21,12 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables(nvml_ok: bool, services_pricelist: List[dict] = None):
+def initialize_gcp_variables(nvml_ok: bool, 
+    services_pricelist: List[dict] = None, pricing_available: bool = False
+):
     gcp_variables = {}
 
     gcp_variables["PRICELIST"] = services_pricelist
-    # Var to track if should attempt to add pricing metrics
-    gcp_variables["PRICING_AVAILABLE"] = True if services_pricelist else False
-
     # initialize Google API client
     gcp_variables["compute"] = google_api("compute", "v1")
 
@@ -51,7 +50,7 @@ def initialize_gcp_variables(nvml_ok: bool, services_pricelist: List[dict] = Non
 
     gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
     # Get billing rates if pricing data is available
-    if gcp_variables["PRICING_AVAILABLE"]:
+    if pricing_available:
         try:
             gcp_variables["COST_PER_SEC"] = (
                 get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
@@ -59,10 +58,7 @@ def initialize_gcp_variables(nvml_ok: bool, services_pricelist: List[dict] = Non
             ) / 3600
         except ValueError as e:
             logging.error(f"Failed to get pricing data: {e}")
-            logging.warning(
-                "Will attempt to continue monitoring without pricing data..."
-            )
-            gcp_variables["PRICING_AVAILABLE"] = False
+            raise
 
     gcp_variables["OWNER"] = (
         gcp_variables["MACHINE"]["owner"]
@@ -218,7 +214,7 @@ def initialize_gcp_variables(nvml_ok: bool, services_pricelist: List[dict] = Non
                 "%",
                 f"GPU{i}: Percent of memory utilized (used / available)",
             )
-    if gcp_variables["PRICING_AVAILABLE"]:
+    if pricing_available:
         gcp_variables["COST_ESTIMATE_METRIC"] = get_metric(
             gcp_variables,
             metrics_client,
@@ -323,14 +319,22 @@ def get_machine_hour(machine, pricelist):
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
     if machine_is_n1_custom and usage_type == "Preemptible":
-        def machine_filter(sku): return "Preemptible Custom" in sku["description"]
+
+        def machine_filter(sku):
+            return "Preemptible Custom" in sku["description"]
+
     elif machine_is_n1_custom and usage_type == "OnDemand":
         # Cant use "Custom in description" because it will match other machine families
         # Need to ensure that Custom is the first word in the description to get
         # OnDemand N1 Custom machines
-        def machine_filter(sku): return bool(re.search(r"^Custom ", sku["description"]))
+        def machine_filter(sku):
+            return bool(re.search(r"^Custom ", sku["description"]))
+
     else:
-        def machine_filter(sku): return machine_prefix in sku["description"]
+
+        def machine_filter(sku):
+            return machine_prefix in sku["description"]
+
     machine_type_skus = [sku for sku in usage_type_skus if machine_filter(sku)]
 
     if machine_prefix == "N1":  # N1 Standard machines need different filters
@@ -527,9 +531,11 @@ def get_disk_hour(machine, pricelist):
             logging.error(f"Skus: {disk_sku}")
             raise ValueError(f"Expected 1 sku for disk, got {len(disk_sku)}")
 
-        disk_price_gb_dollars = int(disk_sku[0]["pricingInfo"][0]["pricingExpression"][
-            "tieredRates"
-        ][-1]["unitPrice"]["units"])
+        disk_price_gb_dollars = int(
+            disk_sku[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+                "unitPrice"
+            ]["units"]
+        )
         disk_price_gb_cents = disk_sku[0]["pricingInfo"][0]["pricingExpression"][
             "tieredRates"
         ][-1]["unitPrice"]["nanos"] / (10**9)
@@ -648,7 +654,7 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     return series
 
 
-def report(gcp_variables, metrics_client, nvml_ok: bool = False):
+def report(gcp_variables, metrics_client, nvml_ok: bool = False, pricing_available: bool = False):
     num_gpus = pynvml.nvmlDeviceGetCount() if nvml_ok else 0
     time_delta = time() - gcp_variables["last_time"]
     gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(num_gpus)]
@@ -697,7 +703,7 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False):
             )
         ]
         
-        if gcp_variables["PRICING_AVAILABLE"]
+        if pricing_available
         else []
     )
     create_time_series(
