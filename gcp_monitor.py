@@ -264,12 +264,13 @@ def get_price_key(key, preemptible):
 
 
 def get_machine_hour(machine, pricelist):
-    machine_prefix = machine["type"].split("-")[0].upper()
+    machine_name_segments = machine["type"].split("-")
+    machine_prefix = machine_name_segments[0].upper()
     # n1 custom machine api responses differ from other machine families
     machine_is_n1_custom = machine_prefix == "CUSTOM"
     # standard, custom, highmem, highcpu, etc.
-    machine_is_custom = True if machine["type"].split("-")[1] == "custom" else False
-    machine_is_extended_memory: bool = machine["type"].split("-")[-1] == "ext"
+    machine_is_custom = True if machine_name_segments[1] == "custom" else False
+    machine_is_extended_memory: bool = [-1] == "ext"
     usage_type = "Preemptible" if machine["preemptible"] else "OnDemand"
     num_cpus: int | None = os.cpu_count()
     if num_cpus is None:
