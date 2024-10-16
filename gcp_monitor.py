@@ -344,28 +344,23 @@ def get_machine_hour(machine, pricelist):
 
     if num_gpus > 0:
         # Convert GPU type to name used in pricing API
-        match gpu_type:
-            case "nvidia-tesla-t4":
-                gpu_type = "T4"
-            case "nvidia-tesla-v100":
-                gpu_type = "V100"
-            case "nvidia-tesla-p100":
-                gpu_type = "P100"
-            case "nvidia-tesla-p4":
-                gpu_type = "P4"
-            case "nvidia-l4":
-                gpu_type = "L4"
-            case "nvidia-tesla-a100":
-                gpu_type = "A100 40GB"
-            case "nvidia-a100-80gb":
-                gpu_type = "A100 80GB"
-            case "nvidia-h100-80gb":
-                # add 'GPU' so this case isnt a substring of H100 Mega
-                gpu_type = "H100 80GB GPU"
-            case "nvidia-h100-mega-80gb":
-                gpu_type = "H100 80GB Plus"
-            case _:
-                raise ValueError(f"Unknown GPU type: {gpu_type}")
+        gpu_name_from_type = MappingProxyType(
+            {
+                "nvidia-tesla-t4": "T4",
+                "nvidia-tesla-v100": "V100",
+                "nvidia-tesla-p100": "P100",
+                "nvidia-tesla-p4": "P4",
+                "nvidia-l4": "L4",
+                "nvidia-tesla-a100": "A100 40GB",
+                "nvidia-a100-80gb": "A100 80GB",
+                "nvidia-h100-80gb": "H100 80GB GPU",
+                "nvidia-h100-mega-80gb": "H100 80GB Plus",
+            }
+        )
+        if gpu_type not in gpu_name_from_type:
+            logging.error(f"Unknown GPU type: {gpu_type}")
+            raise ValueError(f"Unknown GPU type: {gpu_type}")
+        gpu_type = gpu_name_from_type[gpu_type]
 
         gpu_resource_skus = [
             sku for sku in pricelist if "GPU" in sku["category"]["resourceGroup"]
