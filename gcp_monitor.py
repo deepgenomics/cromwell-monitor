@@ -269,7 +269,7 @@ def get_machine_hour(machine, pricelist):
     machine_is_n1_custom = machine_prefix == "CUSTOM"
     # standard, custom, highmem, highcpu, etc.
     machine_is_custom = True if machine_name_segments[1] == "custom" else False
-    machine_is_extended_memory: bool = [-1] == "ext"
+    machine_is_extended_memory: bool = machine_name_segments[-1] == "ext"
     usage_type = "Preemptible" if machine["preemptible"] else "OnDemand"
     num_cpus: int | None = os.cpu_count()
     if num_cpus is None:
