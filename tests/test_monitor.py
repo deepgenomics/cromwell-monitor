@@ -1,10 +1,16 @@
 import json
+from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
 import requests_mock
 
-from gcp_monitor import get_disk_hour, get_machine_hour, get_machine_info, initialize_gcp_variables
+from gcp_monitor import (
+    get_disk_hour,
+    get_machine_hour,
+    get_machine_info,
+    initialize_gcp_variables,
+)
 
 test_metadata_payload = {
     "attributes": {"ssh-keys": "some-ssh-key-value"},
@@ -334,9 +340,22 @@ def test_get_machine_info(**kwargs):
     assert actual_machine_info_output == expected_machine_info_output
 
 
-def get_services_pricelist():
+def get_services_pricelist() -> List[dict]:
     with open("tests/data/services_pricelist.json") as f:
         return json.load(f)
+
+
+def get_units_and_nanos(sku_id: str, pricelist: List[dict]) -> tuple[int, int]:
+    sku = [sku for sku in pricelist if sku_id in sku["skuId"]][0]
+    units = int(
+        sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
+            "units"
+        ]
+    )
+    nanos = sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
+        "nanos"
+    ]
+    return units, nanos
 
 
 def test_get_machine_hour_n1_standard():
@@ -353,18 +372,23 @@ def test_get_machine_hour_n1_standard():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    n1_ram_units = 0
-    n1_ram_nanos = 1128000
-    n1_cpu_units = 0
-    n1_cpu_nanos = 8800000
+    pricelist = get_services_pricelist()
+    ram_sku_id = "5451-0A15-0123"
+    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    cpu_sku_id = "D498-1ECA-87C1"
+    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
     num_ram_gb = 7.5
-    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
     num_cpus = 2
-    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
-    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
-        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
-        actual = get_machine_hour(n1_machine, get_services_pricelist())
-    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
+    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch(
+        "psutil.virtual_memory"
+    ) as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (
+            1024**3
+        )  # convert Gib to bytes
+        actual = get_machine_hour(n1_machine, pricelist)
+    assert actual == cpu_cost_hr + ram_cost_hr
 
 
 def test_get_machine_hour_ondemand_n1_custom_ext():
@@ -381,18 +405,23 @@ def test_get_machine_hour_ondemand_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    n1_ram_units = 0
-    n1_ram_nanos = 9550000
-    n1_cpu_units = 0
-    n1_cpu_nanos = 33191550
+    pricelist = get_services_pricelist()
+    ram_sku = "972B-1B48-9D16"
+    ram_units, ram_nanos = get_units_and_nanos(ram_sku, pricelist)
+    cpu_sku = "ACBC-6999-A1C4"
+    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku, pricelist)
     num_ram_gb = 4
-    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
     num_cpus = 2
-    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
-    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
-        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
-        actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
-    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
+    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch(
+        "psutil.virtual_memory"
+    ) as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (
+            1024**3
+        )  # convert Gib to bytes
+        actual = get_machine_hour(n1_custom_extended_machine, pricelist)
+    assert actual == cpu_cost_hr + ram_cost_hr
 
 
 def test_get_machine_hour_preemptible_n1_custom_ext():
@@ -409,18 +438,23 @@ def test_get_machine_hour_preemptible_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    n1_ram_units = 0
-    n1_ram_nanos = 2664000
-    n1_cpu_units = 0
-    n1_cpu_nanos = 9240000
+    pricelist = get_services_pricelist()
+    ram_sku_id = "C1E6-3CA5-CE59"
+    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    cpu_sku_id = "4A30-9DBE-ECEA"
+    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
     num_ram_gb = 4
-    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
     num_cpus = 2
-    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
-    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
-        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
-        actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
-    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
+    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch(
+        "psutil.virtual_memory"
+    ) as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (
+            1024**3
+        )  # convert Gib to bytes
+        actual = get_machine_hour(n1_custom_extended_machine, pricelist)
+    assert actual == cpu_cost_hr + ram_cost_hr
 
 
 def test_get_machine_hour_h100_mega():
@@ -437,22 +471,27 @@ def test_get_machine_hour_h100_mega():
         "gpu_count": 8,
         "gpu_type": "nvidia-h100-mega-80gb",
     }
-    a3_ram_units = 0
-    a3_ram_nanos = 1289000
-    a3_cpu_units = 0
-    a3_cpu_nanos = 14810000
+    pricelist = get_services_pricelist()
+    ram_sku_id = "9A1D-C6C8-D7B9"
+    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    cpu_sku_id = "AEAF-12C5-E41B"
+    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
     num_ram_gb = 1872
-    a3_ram_cost_hr = (a3_ram_units + (a3_ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
     num_cpus = 208
-    a3_cpu_cost_hr = (a3_cpu_units + (a3_cpu_nanos / (10**9))) * num_cpus
+    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    gpu_sku_id = "8609-4BAD-F240"
+    gpu_units, gpu_nanos = get_units_and_nanos(gpu_sku_id, pricelist)
     num_gpus = 8
-    h100_mega_gpu_units = 4
-    h100_mega_gpu_nanos = 137700000
-    h100_mega_gpu_cost_hr = (h100_mega_gpu_units + (h100_mega_gpu_nanos / (10**9))) * num_gpus
-    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
-        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
-        actual = get_machine_hour(h100_mega_machine, get_services_pricelist())
-    assert actual == a3_cpu_cost_hr + a3_ram_cost_hr + h100_mega_gpu_cost_hr
+    gpu_cost_hr = (gpu_units + (gpu_nanos / (10**9))) * num_gpus
+    with patch("os.cpu_count", return_value=num_cpus), patch(
+        "psutil.virtual_memory"
+    ) as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (
+            1024**3
+        )  # convert Gib to bytes
+        actual = get_machine_hour(h100_mega_machine, pricelist)
+    assert actual == cpu_cost_hr + ram_cost_hr + gpu_cost_hr
 
 
 def test_get_machine_hour_no_skus():
@@ -469,15 +508,17 @@ def test_get_machine_hour_no_skus():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = [{
-        "serviceRegions": ["us-central1"],
-        "description": "Random machine type",
-        "category": {
-            "usageType": "OnDemand",
-            "resourceFamily": "Compute",
-            "resourceGroup": "Filler",
+    pricelist = [
+        {
+            "serviceRegions": ["us-central1"],
+            "description": "Random machine type",
+            "category": {
+                "usageType": "OnDemand",
+                "resourceFamily": "Compute",
+                "resourceGroup": "Filler",
+            },
         }
-    }]
+    ]
     with pytest.raises(ValueError):
         get_machine_hour(machine, pricelist=pricelist)
 
@@ -503,7 +544,7 @@ def test_get_machine_hour_too_many_skus():
             "usageType": "Preemptible",
             "resourceFamily": "Compute",
             "resourceGroup": "GPU",
-        }
+        },
     }
     pricelist = get_services_pricelist() + [extra_sku]
     with pytest.raises(ValueError):
@@ -542,12 +583,15 @@ def test_get_disk_hour():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    actual = get_disk_hour(pd_standard_machine, get_services_pricelist())
-    pd_standard_units = 0
-    pd_standard_nanos = 40000000
+    pricelist = get_services_pricelist()
+    actual = get_disk_hour(pd_standard_machine, pricelist)
+    disk_sku_id = "D973-5D65-BAB2"
+    disk_units, disk_nanos = get_units_and_nanos(disk_sku_id, pricelist)
     num_disk_gb = 20
-    pd_standard_cost_hr = ((pd_standard_units + (pd_standard_nanos / (10**9))) / 730) * num_disk_gb # disk price is per month, 730 hrs in a month
-    assert actual == pd_standard_cost_hr
+    disk_cost_hr = (
+        (disk_units + (disk_nanos / (10**9))) / 730
+    ) * num_disk_gb  # disk price is per month, 730 hrs in a month
+    assert actual == disk_cost_hr
 
 
 def test_get_disk_hour_no_skus():
@@ -564,15 +608,17 @@ def test_get_disk_hour_no_skus():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = [{
-        "serviceRegions": ["us-central1"],
-        "description": "Random machine type",
-        "category": {
-            "usageType": "OnDemand",
-            "resourceFamily": "Compute",
-            "resourceGroup": "Filler",
+    pricelist = [
+        {
+            "serviceRegions": ["us-central1"],
+            "description": "Random machine type",
+            "category": {
+                "usageType": "OnDemand",
+                "resourceFamily": "Compute",
+                "resourceGroup": "Filler",
+            },
         }
-    }]
+    ]
     with pytest.raises(ValueError):
         get_disk_hour(machine, pricelist=pricelist)
 
@@ -598,7 +644,7 @@ def test_get_disk_hour_too_many_skus():
             "usageType": "OnDemand",
             "resourceFamily": "Storage",
             "resourceGroup": "Disk",
-        }
+        },
     }
     pricelist = get_services_pricelist() + [extra_sku]
     with pytest.raises(ValueError):
