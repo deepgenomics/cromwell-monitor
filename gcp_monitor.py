@@ -279,6 +279,59 @@ def get_machine_hour(machine, pricelist):
     num_gpus = machine.get("gpu_count", 0)
     gpu_type: str | None = machine.get("gpu_type", None)
 
+    core_skus, memory_skus, gpu_skus = get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_is_custom, machine_is_extended_memory, usage_type, num_gpus, gpu_type)
+
+    # Check that only 1 sku is returned for each category
+    if len(core_skus) != 1:
+        logging.error(f"Expected 1 sku for CPU, got {len(core_skus)}")
+        logging.error(f"Skus: {core_skus}")
+        raise ValueError(f"Expected 1 sku for CPU, got {len(core_skus)}")
+    if len(memory_skus) != 1:
+        logging.error(f"Expected 1 sku for RAM, got {len(memory_skus)}")
+        logging.error(f"Skus: {memory_skus}")
+        raise ValueError(f"Expected 1 sku for RAM, got {len(memory_skus)}")
+    if num_gpus > 0 and len(gpu_skus) != 1:
+        logging.error(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
+        logging.error(f"Skus: {gpu_skus}")
+        raise ValueError(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
+
+    # Pricing api splits the price into units and nanos.
+    # Units are whole dollars, nanos are cents but represented as nanos of a dollar
+    cpu_dollars_price = int(
+        core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
+    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
+    cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
+    ram_dollars_price = int(
+        memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+            "unitPrice"
+        ]["units"]
+    )
+    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
+        "tieredRates"
+    ][-1]["unitPrice"]["nanos"] / (10**9)
+    ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
+
+    if num_gpus > 0:
+        gpu_dollars_price = int(
+            gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
+                "unitPrice"
+            ]["units"]
+        )
+        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
+            "tieredRates"
+        ][-1]["unitPrice"]["nanos"] / (10**9)
+        gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
+        return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
+    else:
+        return cpu_price_per_hr + ram_price_per_hr
+
+
+def get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_is_custom, machine_is_extended_memory, usage_type, num_gpus, gpu_type):
     # Initial sku filtering results will go in these vars
     core_skus: List[dict] | None = None
     memory_skus: List[dict] | None = None
@@ -293,7 +346,6 @@ def get_machine_hour(machine, pricelist):
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
     if machine_is_n1_custom and usage_type == "Preemptible":
-
         def machine_filter(sku):
             return "Preemptible Custom" in sku["description"]
 
@@ -305,7 +357,6 @@ def get_machine_hour(machine, pricelist):
             return bool(re.search(r"^Custom ", sku["description"]))
 
     else:
-
         def machine_filter(sku):
             return machine_prefix in sku["description"]
 
@@ -381,54 +432,7 @@ def get_machine_hour(machine, pricelist):
         if gpu_type == "H100 80GB Plus":
             core_skus = [sku for sku in core_skus if "A3Plus" in sku["description"]]
             memory_skus = [sku for sku in memory_skus if "A3Plus" in sku["description"]]
-
-    # Check that only 1 sku is returned for each category
-    if len(core_skus) != 1:
-        logging.error(f"Expected 1 sku for CPU, got {len(core_skus)}")
-        logging.error(f"Skus: {core_skus}")
-        raise ValueError(f"Expected 1 sku for CPU, got {len(core_skus)}")
-    if len(memory_skus) != 1:
-        logging.error(f"Expected 1 sku for RAM, got {len(memory_skus)}")
-        logging.error(f"Skus: {memory_skus}")
-        raise ValueError(f"Expected 1 sku for RAM, got {len(memory_skus)}")
-    if num_gpus > 0 and len(gpu_skus) != 1:
-        logging.error(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
-        logging.error(f"Skus: {gpu_skus}")
-        raise ValueError(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
-
-    # Pricing api splits the price into units and nanos.
-    # Units are whole dollars, nanos are cents but represented as nanos of a dollar
-    cpu_dollars_price = int(
-        core_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
-            "unitPrice"
-        ]["units"]
-    )
-    cpu_cents_price = core_skus[0]["pricingInfo"][0]["pricingExpression"][
-        "tieredRates"
-    ][-1]["unitPrice"]["nanos"] / (10**9)
-    cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
-    ram_dollars_price = int(
-        memory_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
-            "unitPrice"
-        ]["units"]
-    )
-    ram_cents_price = memory_skus[0]["pricingInfo"][0]["pricingExpression"][
-        "tieredRates"
-    ][-1]["unitPrice"]["nanos"] / (10**9)
-    ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
-    if num_gpus > 0:
-        gpu_dollars_price = int(
-            gpu_skus[0]["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
-                "unitPrice"
-            ]["units"]
-        )
-        gpu_cents_price = gpu_skus[0]["pricingInfo"][0]["pricingExpression"][
-            "tieredRates"
-        ][-1]["unitPrice"]["nanos"] / (10**9)
-        gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
-        return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
-    else:
-        return cpu_price_per_hr + ram_price_per_hr
+    return core_skus, memory_skus, gpu_skus
 
 
 def get_disk_hour(machine, pricelist):
