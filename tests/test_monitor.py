@@ -342,8 +342,18 @@ def test_get_machine_hour_n1_standard():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    actual = get_machine_hour(n1_machine, get_services_pricelist())
-    assert actual > 0
+    n1_ram_units = 0
+    n1_ram_nanos = 1128000
+    n1_cpu_units = 0
+    n1_cpu_nanos = 8800000
+    num_ram_gb = 7.5
+    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    num_cpus = 2
+    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
+        actual = get_machine_hour(n1_machine, get_services_pricelist())
+    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
 
 
 def test_get_machine_hour_ondemand_n1_custom_ext():
@@ -360,8 +370,18 @@ def test_get_machine_hour_ondemand_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
-    assert actual > 0
+    n1_ram_units = 0
+    n1_ram_nanos = 9550000
+    n1_cpu_units = 0
+    n1_cpu_nanos = 33191550
+    num_ram_gb = 4
+    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    num_cpus = 2
+    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
+        actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
+    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
 
 
 def test_get_machine_hour_preemptible_n1_custom_ext():
@@ -378,8 +398,18 @@ def test_get_machine_hour_preemptible_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
-    assert actual > 0
+    n1_ram_units = 0
+    n1_ram_nanos = 2664000
+    n1_cpu_units = 0
+    n1_cpu_nanos = 9240000
+    num_ram_gb = 4
+    n1_ram_cost_hr = (n1_ram_units + (n1_ram_nanos / (10**9))) * num_ram_gb
+    num_cpus = 2
+    n1_cpu_cost_hr = (n1_cpu_units + (n1_cpu_nanos / (10**9))) * num_cpus
+    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
+        actual = get_machine_hour(n1_custom_extended_machine, get_services_pricelist())
+    assert actual == n1_cpu_cost_hr + n1_ram_cost_hr
 
 
 def test_get_machine_hour_h100_mega():
@@ -396,8 +426,22 @@ def test_get_machine_hour_h100_mega():
         "gpu_count": 8,
         "gpu_type": "nvidia-h100-mega-80gb",
     }
-    actual = get_machine_hour(h100_mega_machine, get_services_pricelist())
-    assert actual > 0
+    a3_ram_units = 0
+    a3_ram_nanos = 1289000
+    a3_cpu_units = 0
+    a3_cpu_nanos = 14810000
+    num_ram_gb = 1872
+    a3_ram_cost_hr = (a3_ram_units + (a3_ram_nanos / (10**9))) * num_ram_gb
+    num_cpus = 208
+    a3_cpu_cost_hr = (a3_cpu_units + (a3_cpu_nanos / (10**9))) * num_cpus
+    num_gpus = 8
+    h100_mega_gpu_units = 4
+    h100_mega_gpu_nanos = 137700000
+    h100_mega_gpu_cost_hr = (h100_mega_gpu_units + (h100_mega_gpu_nanos / (10**9))) * num_gpus
+    with patch("os.cpu_count", return_value=num_cpus), patch("psutil.virtual_memory") as mock_virtual_memory:
+        mock_virtual_memory.return_value.total = num_ram_gb * (1024**3)  # convert Gib to bytes
+        actual = get_machine_hour(h100_mega_machine, get_services_pricelist())
+    assert actual == a3_cpu_cost_hr + a3_ram_cost_hr + h100_mega_gpu_cost_hr
 
 
 def test_get_machine_hour_no_skus():
@@ -488,7 +532,11 @@ def test_get_disk_hour():
         "gpu_type": None,
     }
     actual = get_disk_hour(pd_standard_machine, get_services_pricelist())
-    assert actual > 0
+    pd_standard_units = 0
+    pd_standard_nanos = 40000000
+    num_disk_gb = 20
+    pd_standard_cost_hr = ((pd_standard_units + (pd_standard_nanos / (10**9))) / 730) * num_disk_gb # disk price is per month, 730 hrs in a month
+    assert actual == pd_standard_cost_hr
 
 
 def test_get_disk_hour_no_skus():
