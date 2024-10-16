@@ -5,6 +5,7 @@ from os import environ
 import os
 import re
 from time import sleep, time
+from types import MappingProxyType
 from typing import List
 
 import psutil as ps
@@ -440,28 +441,23 @@ def get_disk_hour(machine, pricelist):
     # billed monthly based on resources allocated to the pool, not the VM
     total = 0
     for disk in machine.get("disks"):
-        search_term: str | None = None
-        match disk["type"]:
-            case "pd-standard":
-                search_term = "Storage PD Capacity"
-            case "pd-balanced":
-                search_term = "Balanced PD Capacity"
-            case "pd-ssd":
-                search_term = "SSD backed PD Capacity"
-            case "local-ssd":
-                search_term = "SSD backed Local Storage"
-            case "pd-extreme":
-                search_term = "Extreme PD Capacity"
-            case "hyperdisk-throughput":
-                search_term = "Hyperdisk Throughput Capacity"
-            case "hyperdisk-ml":
-                search_term = "Hyperdisk ML Capacity"
-            case "hyperdisk-extreme":
-                search_term = "Hyperdisk Extreme Capacity"
-            case "hyperdisk-balanced":
-                search_term = "Hyperdisk Balanced Capacity"
-            case _:
-                raise ValueError(f"Unknown disk type: {disk['type']}")
+        disk_name_from_type = MappingProxyType(
+            {
+                "pd-standard": "Storage PD Capacity",
+                "pd-balanced": "Balanced PD Capacity",
+                "pd-ssd": "SSD backed PD Capacity",
+                "local-ssd": "SSD backed Local Storage",
+                "pd-extreme": "Extreme PD Capacity",
+                "hyperdisk-throughput": "Hyperdisk Throughput Capacity",
+                "hyperdisk-ml": "Hyperdisk ML Capacity",
+                "hyperdisk-extreme": "Hyperdisk Extreme Capacity",
+                "hyperdisk-balanced": "Hyperdisk Balanced Capacity",
+            }
+        )
+        if disk["type"] not in disk_name_from_type:
+            logging.error(f"Unknown disk type: {disk['type']}")
+            raise ValueError(f"Unknown disk type: {disk['type']}")
+        search_term = disk_name_from_type[disk["type"]]
         # Filter skus to be in the same region as the VM
         regional_price_skus = [
             sku for sku in pricelist if machine["region"] in sku["serviceRegions"]
