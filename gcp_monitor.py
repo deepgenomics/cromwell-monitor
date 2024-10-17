@@ -1,12 +1,12 @@
 import copy
 import logging
-from functools import reduce
-from os import environ
 import os
 import re
+from functools import reduce
+from os import environ
 from time import sleep, time
 from types import MappingProxyType
-from typing import List
+from typing import Callable, List
 
 import psutil as ps
 import pynvml
@@ -309,7 +309,18 @@ def get_machine_hour(machine, pricelist):
     num_gpus = machine.get("gpu_count", 0)
     gpu_type: str | None = machine.get("gpu_type", None)
 
-    core_skus, memory_skus, gpu_skus = get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_is_custom, machine_is_extended_memory, usage_type, num_gpus, gpu_type)
+    core_skus, memory_skus = get_skus(
+        machine,
+        pricelist,
+        machine_prefix,
+        machine_is_n1_custom,
+        machine_is_custom,
+        machine_is_extended_memory,
+        usage_type,
+        num_gpus,
+        gpu_type,
+    )
+    gpu_skus = get_gpu_skus(num_gpus, gpu_type, machine, pricelist, usage_type)
 
     # Check that only 1 sku is returned for each category
     if len(core_skus) != 1:
@@ -361,11 +372,17 @@ def get_machine_hour(machine, pricelist):
         return cpu_price_per_hr + ram_price_per_hr
 
 
-def get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_is_custom, machine_is_extended_memory, usage_type, num_gpus, gpu_type):
-    # Initial sku filtering results will go in these vars
-    core_skus: List[dict] | None = None
-    memory_skus: List[dict] | None = None
-    gpu_skus: List[dict] | None = None
+def get_skus(
+    machine,
+    pricelist,
+    machine_prefix,
+    machine_is_n1_custom,
+    machine_is_custom,
+    machine_is_extended_memory,
+    usage_type,
+    num_gpus,
+    gpu_type,
+):
     # Do a series of filters on the pricelist to get the correct sku
     regional_skus = [
         sku for sku in pricelist if machine["region"] in sku["serviceRegions"]
@@ -376,6 +393,7 @@ def get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_i
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
     if machine_is_n1_custom and usage_type == "Preemptible":
+
         def machine_filter(sku):
             return "Preemptible Custom" in sku["description"]
 
@@ -387,82 +405,81 @@ def get_skus(machine, pricelist, machine_prefix, machine_is_n1_custom, machine_i
             return bool(re.search(r"^Custom ", sku["description"]))
 
     else:
+
         def machine_filter(sku):
             return machine_prefix in sku["description"]
 
     machine_type_skus = [sku for sku in usage_type_skus if machine_filter(sku)]
 
+    core_filters: List[Callable[[dict], bool]] = []
+    memory_filters: List[Callable[[dict], bool]] = []
     if machine_prefix == "N1":  # N1 Standard machines need different filters
-        core_skus = [sku for sku in machine_type_skus if "Core" in sku["description"]]
-        memory_skus = [sku for sku in machine_type_skus if "Ram" in sku["description"]]
+        core_filters.append(lambda sku: "Core" in sku["description"])
+        memory_filters.append(lambda sku: "Ram" in sku["description"])
     else:
-        core_skus = [
-            sku
-            for sku in machine_type_skus
-            if "CPU" in sku["category"]["resourceGroup"]
-        ]
-        memory_skus = [
-            sku
-            for sku in machine_type_skus
-            if "RAM" in sku["category"]["resourceGroup"]
-        ]
+        core_filters.append(lambda sku: "CPU" in sku["category"]["resourceGroup"])
+        memory_filters.append(lambda sku: "RAM" in sku["category"]["resourceGroup"])
 
     if machine_is_custom or machine_is_n1_custom:
         # Filter out non-custom machines from core and memory skus
-        core_skus = [sku for sku in core_skus if "Custom" in sku["description"]]
-        memory_skus = [sku for sku in memory_skus if "Custom" in sku["description"]]
+        core_filters.append(lambda sku: "Custom" in sku["description"])
+        memory_filters.append(lambda sku: "Custom" in sku["description"])
     else:
         # Filter out custom machines from core and memory skus
-        core_skus = [sku for sku in core_skus if "Custom" not in sku["description"]]
-        memory_skus = [sku for sku in memory_skus if "Custom" not in sku["description"]]
+        core_filters.append(lambda sku: "Custom" not in sku["description"])
+        memory_filters.append(lambda sku: "Custom" not in sku["description"])
 
     if machine_is_extended_memory:
-        memory_skus = [sku for sku in memory_skus if "Extended" in sku["description"]]
+        memory_filters.append(lambda sku: "Extended" in sku["description"])
     else:
-        memory_skus = [
-            sku for sku in memory_skus if "Extended" not in sku["description"]
-        ]
+        memory_filters.append(lambda sku: "Extended" not in sku["description"])
 
+    # Edge-case where h100 mega gpu machines have
+    # different sku names for CPU and RAM
     if num_gpus > 0:
-        # Convert GPU type to name used in pricing API
-        gpu_name_from_type = MappingProxyType(
-            {
-                "nvidia-tesla-t4": "T4",
-                "nvidia-tesla-v100": "V100",
-                "nvidia-tesla-p100": "P100",
-                "nvidia-tesla-p4": "P4",
-                "nvidia-l4": "L4",
-                "nvidia-tesla-a100": "A100 40GB",
-                "nvidia-a100-80gb": "A100 80GB",
-                "nvidia-h100-80gb": "H100 80GB GPU",
-                "nvidia-h100-mega-80gb": "H100 80GB Plus",
-            }
-        )
-        if gpu_type not in gpu_name_from_type:
-            logging.error(f"Unknown GPU type: {gpu_type}")
+        if gpu_type not in _GPU_NAME_FROM_TYPE:
             raise ValueError(f"Unknown GPU type: {gpu_type}")
-        gpu_type = gpu_name_from_type[gpu_type]
+        if _GPU_NAME_FROM_TYPE.get(gpu_type) == "H100 80GB Plus":
+            core_filters.append(lambda sku: "A3Plus" in sku["description"])
+            memory_filters.append(lambda sku: "A3Plus" in sku["description"])
+    core_skus = list(
+        reduce(lambda result, f: filter(f, result), core_filters, machine_type_skus)
+    )
+    memory_skus = list(
+        reduce(lambda result, f: filter(f, result), memory_filters, machine_type_skus)
+    )
+    return core_skus, memory_skus
 
-        gpu_resource_skus = [
-            sku for sku in pricelist if "GPU" in sku["category"]["resourceGroup"]
-        ]
-        gpu_region_skus = [
-            sku
-            for sku in gpu_resource_skus
-            if machine["region"] in sku["serviceRegions"]
-        ]
-        gpu_type_skus = [
-            sku for sku in gpu_region_skus if gpu_type in sku["description"]
-        ]
-        gpu_skus = [
-            sku for sku in gpu_type_skus if usage_type in sku["category"]["usageType"]
-        ]
-        # Edge-case where h100 mega gpu machines have
-        # different sku names for CPU and RAM
-        if gpu_type == "H100 80GB Plus":
-            core_skus = [sku for sku in core_skus if "A3Plus" in sku["description"]]
-            memory_skus = [sku for sku in memory_skus if "A3Plus" in sku["description"]]
-    return core_skus, memory_skus, gpu_skus
+
+_GPU_NAME_FROM_TYPE = MappingProxyType(
+    {
+        "nvidia-tesla-t4": "T4",
+        "nvidia-tesla-v100": "V100",
+        "nvidia-tesla-p100": "P100",
+        "nvidia-tesla-p4": "P4",
+        "nvidia-l4": "L4",
+        "nvidia-tesla-a100": "A100 40GB",
+        "nvidia-a100-80gb": "A100 80GB",
+        "nvidia-h100-80gb": "H100 80GB GPU",
+        "nvidia-h100-mega-80gb": "H100 80GB Plus",
+    }
+)
+
+
+def get_gpu_skus(num_gpus, gpu_type, machine, pricelist, usage_type):
+    if num_gpus == 0:
+        return []
+    gpu_filters: List[Callable[[dict], bool]] = []
+    if gpu_type not in _GPU_NAME_FROM_TYPE:
+        raise ValueError(f"Unknown GPU type: {gpu_type}")
+
+    gpu_filters.append(lambda sku: "GPU" in sku["category"]["resourceGroup"])
+    gpu_filters.append(lambda sku: machine["region"] in sku["serviceRegions"])
+    gpu_filters.append(
+        lambda sku: _GPU_NAME_FROM_TYPE.get(gpu_type) in sku["description"]
+    )
+    gpu_filters.append(lambda sku: usage_type in sku["category"]["usageType"])
+    return list(reduce(lambda result, f: filter(f, result), gpu_filters, pricelist))
 
 
 def get_disk_hour(machine, pricelist):
