@@ -1,0 +1,262 @@
+[
+    {
+        "name": "services/6F81-5844-456A/skus/5451-0A15-0123",
+        "skuId": "5451-0A15-0123",
+        "description": "Spot Preemptible N1 Predefined Instance Ram running in Americas",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "N1Standard",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 1128000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte hour",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 3865470566400
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0227-3116-EA8A",
+        "skuId": "0227-3116-EA8A",
+        "description": "Spot Preemptible H3 Instance Ram running in Americas",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "RAM",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 1243200
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte hour",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 3865470566400
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0086-8707-C3B1",
+        "skuId": "0086-8707-C3B1",
+        "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Network",
+            "resourceGroup": "InterregionEgress",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "australia-southeast2",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 0
+                            }
+                        },
+                        {
+                            "startUsageAmount": 1,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 100000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte",
+                    "baseUnit": "By",
+                    "baseUnitDescription": "byte",
+                    "baseUnitConversionFactor": 1073741824
+                },
+                "aggregationInfo": {
+                    "aggregationLevel": "ACCOUNT",
+                    "aggregationInterval": "MONTHLY",
+                    "aggregationCount": 1
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0001-FC8F-A9AF",
+        "skuId": "0001-FC8F-A9AF",
+        "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "CPU",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "europe-west9"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 9198000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "hour",
+                    "baseUnit": "s",
+                    "baseUnitDescription": "second",
+                    "baseUnitConversionFactor": 3600
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "europe-west9"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/D498-1ECA-87C1",
+        "skuId": "D498-1ECA-87C1",
+        "description": "Spot Preemptible N1 Predefined Instance Core running in Americas",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "N1Standard",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 8800000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "hour",
+                    "baseUnit": "s",
+                    "baseUnitDescription": "second",
+                    "baseUnitConversionFactor": 3600
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    }
+]

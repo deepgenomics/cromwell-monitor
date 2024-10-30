@@ -1,0 +1,522 @@
+[
+    {
+        "name": "services/6F81-5844-456A/skus/0AC7-3372-0774",
+        "skuId": "0AC7-3372-0774",
+        "description": "Hyperdisk ML Capacity in Iowa",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "SSD",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 80000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "us-central1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/A29F-0E9D-FF6A",
+        "skuId": "A29F-0E9D-FF6A",
+        "description": "Hyperdisk Balanced High Availability Capacity in Iowa",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "SSD",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 160000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "us-central1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0FE3-CAB9-E7E3",
+        "skuId": "0FE3-CAB9-E7E3",
+        "description": "Regional Balanced PD Capacity",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "SSD",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-central2",
+            "us-east1",
+            "us-west1",
+            "asia-east1",
+            "europe-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 200000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "asia-east1",
+                "europe-west1",
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/5A5C-DF65-5472",
+        "skuId": "5A5C-DF65-5472",
+        "description": "Hyperdisk Balanced Throughput Confidential Mode in Iowa",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "SSD",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 8000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "month",
+                    "baseUnit": "s",
+                    "baseUnitDescription": "second",
+                    "baseUnitConversionFactor": 2592000
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "us-central1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/05A0-FF55-0F9B",
+        "skuId": "05A0-FF55-0F9B",
+        "description": "Hyperdisk Balanced Storage Pools Advanced Capacity - Iowa",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "HDBSP",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 140000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "us-central1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0086-8707-C3B1",
+        "skuId": "0086-8707-C3B1",
+        "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Network",
+            "resourceGroup": "InterregionEgress",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "australia-southeast2",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 0
+                            }
+                        },
+                        {
+                            "startUsageAmount": 1,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 100000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte",
+                    "baseUnit": "By",
+                    "baseUnitDescription": "byte",
+                    "baseUnitConversionFactor": 1073741824
+                },
+                "aggregationInfo": {
+                    "aggregationLevel": "ACCOUNT",
+                    "aggregationInterval": "MONTHLY",
+                    "aggregationCount": 1
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0227-3116-EA8A",
+        "skuId": "0227-3116-EA8A",
+        "description": "Spot Preemptible H3 Instance Ram running in Americas",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "RAM",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 1243200
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte hour",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 3865470566400
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/0001-FC8F-A9AF",
+        "skuId": "0001-FC8F-A9AF",
+        "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Compute",
+            "resourceGroup": "CPU",
+            "usageType": "Preemptible"
+        },
+        "serviceRegions": [
+            "europe-west9"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "h",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 9198000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "hour",
+                    "baseUnit": "s",
+                    "baseUnitDescription": "second",
+                    "baseUnitConversionFactor": 3600
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "REGIONAL",
+            "regions": [
+                "europe-west9"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/D973-5D65-BAB2",
+        "skuId": "D973-5D65-BAB2",
+        "description": "Storage PD Capacity",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "PDStandard",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1",
+            "asia-east1",
+            "europe-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 0
+                            }
+                        },
+                        {
+                            "startUsageAmount": 30,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 40000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "aggregationInfo": {
+                    "aggregationLevel": "ACCOUNT",
+                    "aggregationInterval": "MONTHLY",
+                    "aggregationCount": 1
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "asia-east1",
+                "europe-west1",
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    },
+    {
+        "name": "services/6F81-5844-456A/skus/B188-61DD-52E4",
+        "skuId": "B188-61DD-52E4",
+        "description": "SSD backed PD Capacity",
+        "category": {
+            "serviceDisplayName": "Compute Engine",
+            "resourceFamily": "Storage",
+            "resourceGroup": "SSD",
+            "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+            "us-central1",
+            "us-east1",
+            "us-west1",
+            "asia-east1",
+            "europe-west1"
+        ],
+        "pricingInfo": [
+            {
+                "summary": "",
+                "pricingExpression": {
+                    "usageUnit": "GiBy.mo",
+                    "displayQuantity": 1,
+                    "tieredRates": [
+                        {
+                            "startUsageAmount": 0,
+                            "unitPrice": {
+                                "currencyCode": "USD",
+                                "units": "0",
+                                "nanos": 170000000
+                            }
+                        }
+                    ],
+                    "usageUnitDescription": "gibibyte month",
+                    "baseUnit": "By.s",
+                    "baseUnitDescription": "byte second",
+                    "baseUnitConversionFactor": 2783138807808000.0
+                },
+                "currencyConversionRate": 1,
+                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+            }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+            "type": "MULTI_REGIONAL",
+            "regions": [
+                "asia-east1",
+                "europe-west1",
+                "us-central1",
+                "us-east1",
+                "us-west1"
+            ]
+        }
+    }
+]

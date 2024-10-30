@@ -340,8 +340,8 @@ def test_get_machine_info(**kwargs):
     assert actual_machine_info_output == expected_machine_info_output
 
 
-def get_services_pricelist() -> List[dict]:
-    with open("tests/data/services_pricelist.json") as f:
+def get_services_pricelist(filepath: str) -> List[dict]:
+    with open(filepath) as f:
         return json.load(f)
 
 
@@ -372,7 +372,7 @@ def test_get_machine_hour_n1_standard():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = get_services_pricelist()
+    pricelist = get_services_pricelist("tests/data/test_get_machine_hour_n1_standard_pricelist.json")
     ram_sku_id = "5451-0A15-0123"
     ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
     cpu_sku_id = "D498-1ECA-87C1"
@@ -405,7 +405,7 @@ def test_get_machine_hour_ondemand_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = get_services_pricelist()
+    pricelist = get_services_pricelist("tests/data/test_get_machine_hour_ondemand_n1_custom_ext_pricelist.json")
     ram_sku = "972B-1B48-9D16"
     ram_units, ram_nanos = get_units_and_nanos(ram_sku, pricelist)
     cpu_sku = "ACBC-6999-A1C4"
@@ -438,7 +438,7 @@ def test_get_machine_hour_preemptible_n1_custom_ext():
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = get_services_pricelist()
+    pricelist = get_services_pricelist("tests/data/test_get_machine_hour_preemptible_n1_custom_ext_pricelist.json")
     ram_sku_id = "C1E6-3CA5-CE59"
     ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
     cpu_sku_id = "4A30-9DBE-ECEA"
@@ -471,7 +471,7 @@ def test_get_machine_hour_h100_mega():
         "gpu_count": 8,
         "gpu_type": "nvidia-h100-mega-80gb",
     }
-    pricelist = get_services_pricelist()
+    pricelist = get_services_pricelist("tests/data/test_get_machine_hour_h100_mega_pricelist.json")
     ram_sku_id = "9A1D-C6C8-D7B9"
     ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
     cpu_sku_id = "AEAF-12C5-E41B"
@@ -546,7 +546,7 @@ def test_get_machine_hour_too_many_skus():
             "resourceGroup": "GPU",
         },
     }
-    pricelist = get_services_pricelist() + [extra_sku]
+    pricelist = get_services_pricelist("tests/data/test_get_machine_hour_h100_mega_pricelist.json") + [extra_sku]
     with pytest.raises(ValueError):
         get_machine_hour(h100_mega_machine, pricelist=pricelist)
 
@@ -566,7 +566,7 @@ def test_get_machine_hour_unknown_gpu():
         "gpu_type": "fake-gpu",
     }
     with pytest.raises(ValueError):
-        get_machine_hour(fake_gpu_machine, get_services_pricelist())
+        get_machine_hour(fake_gpu_machine, get_services_pricelist("tests/data/test_get_machine_hour_h100_mega_pricelist.json"))
 
 
 def test_get_disk_hour():
@@ -577,21 +577,26 @@ def test_get_disk_hour():
         "name": "cromwell-monitor-test",
         "type": "n1-standard-2",
         "preemptible": True,
-        "disks": [{"type": "pd-standard", "sizeGb": 20}],
+        "disks": [{"type": "pd-standard", "sizeGb": 20}, {"type": "pd-ssd", "sizeGb": 30}],
         "owner": "test_owner",
         "entrance_wdl": "label1",
         "gpu_count": 0,
         "gpu_type": None,
     }
-    pricelist = get_services_pricelist()
+    pricelist = get_services_pricelist("tests/data/test_get_disk_hour_pricelist.json")
     actual = get_disk_hour(pd_standard_machine, pricelist)
-    disk_sku_id = "D973-5D65-BAB2"
-    disk_units, disk_nanos = get_units_and_nanos(disk_sku_id, pricelist)
-    num_disk_gb = 20
-    disk_cost_hr = (
-        (disk_units + (disk_nanos / (10**9))) / 730
-    ) * num_disk_gb  # disk price is per month, 730 hrs in a month
-    assert actual == disk_cost_hr
+    disk_standard_sku_id = "D973-5D65-BAB2"
+    disk_standard_units, disk_standard_nanos = get_units_and_nanos(disk_standard_sku_id, pricelist)
+    num_disk_standard_gb = 20
+    disk_standard_cost_hr = (
+        (disk_standard_units + (disk_standard_nanos / (10**9))) / 730
+    ) * num_disk_standard_gb  # disk price is per month, 730 hrs in a month
+    disk_ssd_sku_id = "B188-61DD-52E4"
+    disk_ssd_units, disk_ssd_nanos = get_units_and_nanos(disk_ssd_sku_id, pricelist)
+    num_disk_ssd_gb = 30
+    disk_ssd_cost_hr = (
+        (disk_ssd_units + (disk_ssd_nanos / (10**9))) / 730) * num_disk_ssd_gb
+    assert actual == disk_standard_cost_hr + disk_ssd_cost_hr
 
 
 def test_get_disk_hour_no_skus():
@@ -646,7 +651,7 @@ def test_get_disk_hour_too_many_skus():
             "resourceGroup": "Disk",
         },
     }
-    pricelist = get_services_pricelist() + [extra_sku]
+    pricelist = get_services_pricelist("tests/data/test_get_disk_hour_pricelist.json") + [extra_sku]
     with pytest.raises(ValueError):
         get_disk_hour(pd_standard_machine, pricelist=pricelist)
 
@@ -666,4 +671,4 @@ def test_get_disk_hour_unknown_disk():
         "gpu_type": None,
     }
     with pytest.raises(ValueError):
-        get_disk_hour(fake_disk_machine, get_services_pricelist())
+        get_disk_hour(fake_disk_machine, get_services_pricelist("tests/data/test_get_disk_hour_pricelist.json"))
