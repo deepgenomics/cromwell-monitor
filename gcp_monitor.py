@@ -26,8 +26,6 @@ def initialize_gcp_variables(nvml_ok: bool,
     services_pricelist: List[dict] = None, pricing_available: bool = False
 ):
     gcp_variables = {}
-
-    gcp_variables["PRICELIST"] = services_pricelist
     # initialize Google API client
     gcp_variables["compute"] = google_api("compute", "v1")
 
@@ -54,8 +52,8 @@ def initialize_gcp_variables(nvml_ok: bool,
     if pricing_available:
         try:
             gcp_variables["COST_PER_SEC"] = (
-                get_machine_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
-                + get_disk_hour(gcp_variables["MACHINE"], gcp_variables["PRICELIST"])
+                get_machine_hour(gcp_variables["MACHINE"], services_pricelist)
+                + get_disk_hour(gcp_variables["MACHINE"], services_pricelist)
             ) / 3600
         except ValueError as e:
             logging.error(f"Failed to get pricing data: {e}")
