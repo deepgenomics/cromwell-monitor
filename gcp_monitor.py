@@ -22,8 +22,10 @@ from google.cloud.monitoring_v3 import (
 from googleapiclient.discovery import build as google_api
 
 
-def initialize_gcp_variables(nvml_ok: bool, 
-    services_pricelist: List[dict] = None, pricing_available: bool = False
+def initialize_gcp_variables(
+    nvml_ok: bool,
+    services_pricelist: List[dict] = None,
+    pricing_available: bool = False,
 ):
     gcp_variables = {}
     # initialize Google API client
@@ -634,7 +636,12 @@ def get_time_series(gcp_variables, metric_descriptor, value):
     return series
 
 
-def report(gcp_variables, metrics_client, nvml_ok: bool = False, pricing_available: bool = False):
+def report(
+    gcp_variables,
+    metrics_client,
+    nvml_ok: bool = False,
+    pricing_available: bool = False,
+):
     num_gpus = pynvml.nvmlDeviceGetCount() if nvml_ok else 0
     time_delta = time() - gcp_variables["last_time"]
     gpus = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(num_gpus)]
@@ -682,7 +689,6 @@ def report(gcp_variables, metrics_client, nvml_ok: bool = False, pricing_availab
                 },
             )
         ]
-        
         if pricing_available
         else []
     )

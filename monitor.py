@@ -32,7 +32,7 @@ def get_access_token() -> str:
     res.raise_for_status()
     if "access_token" not in res.json():
         logging.error(
-            f"Error getting access token for authentication to GCP REST API: {res.json()}"
+            f"Error getting authentication access token for GCP REST API: {res.json()}"
         )
         raise ValueError("No access token in response")
     return res.json()["access_token"]
@@ -126,8 +126,8 @@ def main():
                 >= gcp_instance["REPORT_TIME_SEC"]
             ):
                 gcp_instance = gcp_monitor.report(
-                gcp_instance, metrics_client, nvml_ok, pricing_available
-            )
+                    gcp_instance, metrics_client, nvml_ok, pricing_available
+                )
                 gcp_instance = gcp_monitor.reset(gcp_instance)
     finally:
         if nvml_ok:
