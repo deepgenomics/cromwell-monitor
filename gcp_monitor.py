@@ -242,8 +242,7 @@ def get_machine_info(compute):
 
     disks = [get_disk(compute, project, zone, disk) for disk in instance["disks"]]
     # Getting VM GPU resources from the internal metadata here instead of from pynvml
-    # because it is likely more robust, and pynvml wasn't working in the monitoring
-    # container at the time of writing this 2024/10/10
+    # because it is likely more robust
     gpu_data: List[dict] | None = instance.get("guestAccelerators", None)
     # Can't create machines with multiple GPU types, so just get the first element
     gpu_count = gpu_data[0].get("acceleratorCount", 0) if gpu_data else 0
