@@ -1,562 +1,326 @@
 [
-    {
-        "name": "services/6F81-5844-456A/skus/EEE5-1DA5-D9CF",
-        "skuId": "EEE5-1DA5-D9CF",
-        "description": "Spot Preemptible A3 Instance Core running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "CPU",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
-            {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 14020000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
-            }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-east1",
-                "us-west1"
-            ]
-        }
+  {
+    "skuId": "EEE5-1DA5-D9CF",
+    "description": "Spot Preemptible A3 Instance Core running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/9A1D-C6C8-D7B9",
-        "skuId": "9A1D-C6C8-D7B9",
-        "description": "Spot Preemptible A3Plus Instance Ram running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "RAM",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "GiBy.h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 1289000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "gibibyte hour",
-                    "baseUnit": "By.s",
-                    "baseUnitDescription": "byte second",
-                    "baseUnitConversionFactor": 3865470566400
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 14020000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-central2",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "9A1D-C6C8-D7B9",
+    "description": "Spot Preemptible A3Plus Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/0227-3116-EA8A",
-        "skuId": "0227-3116-EA8A",
-        "description": "Spot Preemptible H3 Instance Ram running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "RAM",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "GiBy.h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 1243200
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "gibibyte hour",
-                    "baseUnit": "By.s",
-                    "baseUnitDescription": "byte second",
-                    "baseUnitConversionFactor": 3865470566400
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 1289000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "0227-3116-EA8A",
+    "description": "Spot Preemptible H3 Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/0086-8707-C3B1",
-        "skuId": "0086-8707-C3B1",
-        "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Network",
-            "resourceGroup": "InterregionEgress",
-            "usageType": "OnDemand"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "australia-southeast2",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "GiBy",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 0
-                            }
-                        },
-                        {
-                            "startUsageAmount": 1,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 100000000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "gibibyte",
-                    "baseUnit": "By",
-                    "baseUnitDescription": "byte",
-                    "baseUnitConversionFactor": 1073741824
-                },
-                "aggregationInfo": {
-                    "aggregationLevel": "ACCOUNT",
-                    "aggregationInterval": "MONTHLY",
-                    "aggregationCount": 1
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 1243200
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "0086-8707-C3B1",
+    "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Network",
+      "resourceGroup": "InterregionEgress",
+      "usageType": "OnDemand"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/0001-FC8F-A9AF",
-        "skuId": "0001-FC8F-A9AF",
-        "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "CPU",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "europe-west9"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 9198000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 0
+              }
+            },
+            {
+              "startUsageAmount": 1,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 100000000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "REGIONAL",
-            "regions": [
-                "europe-west9"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "0001-FC8F-A9AF",
+    "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/AEAF-12C5-E41B",
-        "skuId": "AEAF-12C5-E41B",
-        "description": "Spot Preemptible A3Plus Instance Core running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "CPU",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "europe-west9"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 14810000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 9198000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-central2",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "AEAF-12C5-E41B",
+    "description": "Spot Preemptible A3Plus Instance Core running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/F619-87C3-D3BA",
-        "skuId": "F619-87C3-D3BA",
-        "description": "Spot Preemptible A3 Instance Ram running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "RAM",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "GiBy.h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 1221000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "gibibyte hour",
-                    "baseUnit": "By.s",
-                    "baseUnitDescription": "byte second",
-                    "baseUnitConversionFactor": 3865470566400
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 14810000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "F619-87C3-D3BA",
+    "description": "Spot Preemptible A3 Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/5F45-2ADE-3091",
-        "skuId": "5F45-2ADE-3091",
-        "description": "Commitment v1: Nvidia H100 80GB Plus GPU running in Americas for 3 Years",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "GPU",
-            "usageType": "Commit3Yr"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "4",
-                                "nanos": 498983869
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 1221000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-central2",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "5F45-2ADE-3091",
+    "description": "Commitment v1: Nvidia H100 80GB Plus GPU running in Americas for 3 Years",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "GPU",
+      "usageType": "Commit3Yr"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/039F-D0DA-4055",
-        "skuId": "039F-D0DA-4055",
-        "description": "Nvidia Tesla A100 GPU running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "GPU",
-            "usageType": "OnDemand"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "2",
-                                "nanos": 933908000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "4",
+                "nanos": 498983869
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "039F-D0DA-4055",
+    "description": "Nvidia Tesla A100 GPU running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "GPU",
+      "usageType": "OnDemand"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/0008-F633-76AA",
-        "skuId": "0008-F633-76AA",
-        "description": "Nvidia L4 GPU attached to Spot Preemptible VMs running in Hong Kong",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "GPU",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "asia-east2"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "0",
-                                "nanos": 235032100
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "2",
+                "nanos": 933908000
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "REGIONAL",
-            "regions": [
-                "asia-east2"
-            ]
+          ]
         }
+      }
+    ]
+  },
+  {
+    "skuId": "0008-F633-76AA",
+    "description": "Nvidia L4 GPU attached to Spot Preemptible VMs running in Hong Kong",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "GPU",
+      "usageType": "Preemptible"
     },
-    {
-        "name": "services/6F81-5844-456A/skus/8609-4BAD-F240",
-        "skuId": "8609-4BAD-F240",
-        "description": "Nvidia H100 80GB Plus GPU attached to Spot Preemptible VMs running in Americas",
-        "category": {
-            "serviceDisplayName": "Compute Engine",
-            "resourceFamily": "Compute",
-            "resourceGroup": "GPU",
-            "usageType": "Preemptible"
-        },
-        "serviceRegions": [
-            "us-central1",
-            "us-east1",
-            "us-west1"
-        ],
-        "pricingInfo": [
+    "serviceRegions": [
+      "asia-east2"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
             {
-                "summary": "",
-                "pricingExpression": {
-                    "usageUnit": "h",
-                    "displayQuantity": 1,
-                    "tieredRates": [
-                        {
-                            "startUsageAmount": 0,
-                            "unitPrice": {
-                                "currencyCode": "USD",
-                                "units": "4",
-                                "nanos": 137700000
-                            }
-                        }
-                    ],
-                    "usageUnitDescription": "hour",
-                    "baseUnit": "s",
-                    "baseUnitDescription": "second",
-                    "baseUnitConversionFactor": 3600
-                },
-                "currencyConversionRate": 1,
-                "effectiveTime": "2024-09-16T12:03:12.315165Z"
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 235032100
+              }
             }
-        ],
-        "serviceProviderName": "Google",
-        "geoTaxonomy": {
-            "type": "MULTI_REGIONAL",
-            "regions": [
-                "us-central1",
-                "us-central2",
-                "us-east1",
-                "us-west1"
-            ]
+          ]
         }
-    }
+      }
+    ]
+  },
+  {
+    "skuId": "8609-4BAD-F240",
+    "description": "Nvidia H100 80GB Plus GPU attached to Spot Preemptible VMs running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "GPU",
+      "usageType": "Preemptible"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "4",
+                "nanos": 137700000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
 ]
