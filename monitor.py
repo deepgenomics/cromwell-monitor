@@ -31,10 +31,9 @@ def get_access_token() -> str:
     )
     res.raise_for_status()
     if "access_token" not in res.json():
-        logging.error(
-            f"Error getting authentication access token for GCP REST API: {res.json()}"
+        raise ValueError(
+            f"Error getting authentication access token for GCP REST API: {res.json()}, access token not in response"
         )
-        raise ValueError("No access token in response")
     return res.json()["access_token"]
 
 

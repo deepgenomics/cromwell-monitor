@@ -52,14 +52,10 @@ def initialize_gcp_variables(
     gcp_variables["MACHINE"] = get_machine_info(gcp_variables["compute"])
     # Get billing rates if pricing data is available
     if pricing_available:
-        try:
-            gcp_variables["COST_PER_SEC_NANODOLLARS"] = (
-                get_machine_hour(gcp_variables["MACHINE"], services_pricelist)
-                + get_disk_hour(gcp_variables["MACHINE"], services_pricelist)
-            ) / 3600
-        except ValueError as e:
-            logging.error(f"Failed to get pricing data: {e}")
-            raise
+        gcp_variables["COST_PER_SEC_NANODOLLARS"] = (
+            get_machine_hour(gcp_variables["MACHINE"], services_pricelist)
+            + get_disk_hour(gcp_variables["MACHINE"], services_pricelist)
+        ) / 3600
 
     gcp_variables["OWNER"] = (
         gcp_variables["MACHINE"]["owner"]
@@ -316,7 +312,7 @@ def get_machine_hour(machine, pricelist):
     machine_is_n1_custom = machine_prefix == "CUSTOM"
     # standard, custom, highmem, highcpu, etc.
     machine_is_custom = machine_name_segments[1] == "custom"
-    machine_is_extended_memory: bool = "ext" == machine_name_segments[-1]
+    machine_is_extended_memory = machine_name_segments[-1] == "ext"
     usage_type = "Preemptible" if machine["preemptible"] else "OnDemand"
     num_cpus: int | None = os.cpu_count()
     if num_cpus is None:
@@ -340,17 +336,17 @@ def get_machine_hour(machine, pricelist):
 
     # Check that only 1 sku is returned for each category
     if len(cpu_skus) != 1:
-        logging.error(f"Expected 1 sku for CPU, got {len(cpu_skus)}")
-        logging.error(f"Skus: {cpu_skus}")
-        raise ValueError(f"Expected 1 sku for CPU, got {len(cpu_skus)}")
+        raise ValueError(
+            f"Expected 1 sku for CPU, got {len(cpu_skus)}, Skus: {cpu_skus}"
+        )
     if len(memory_skus) != 1:
-        logging.error(f"Expected 1 sku for RAM, got {len(memory_skus)}")
-        logging.error(f"Skus: {memory_skus}")
-        raise ValueError(f"Expected 1 sku for RAM, got {len(memory_skus)}")
+        raise ValueError(
+            f"Expected 1 sku for RAM, got {len(memory_skus)}, Skus: {memory_skus}"
+        )
     if num_gpus > 0 and len(gpu_skus) != 1:
-        logging.error(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
-        logging.error(f"Skus: {gpu_skus}")
-        raise ValueError(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
+        raise ValueError(
+            f"Expected 1 sku for GPU, got {len(gpu_skus)}, Skus: {gpu_skus}"
+        )
 
     cpu_nanodollars_price = get_price_from_sku(cpu_skus[0])
     cpu_price_per_hr = cpu_nanodollars_price * num_cpus
@@ -488,14 +484,13 @@ def get_disk_hour(machine, pricelist):
     total = 0
     for disk in machine.get("disks"):
         if disk["type"] not in _DISK_NAME_FROM_TYPE:
-            logging.error(f"Unknown disk type: {disk['type']}")
             raise ValueError(f"Unknown disk type: {disk['type']}")
         search_term = _DISK_NAME_FROM_TYPE[disk["type"]]
         disk_skus = get_disk_skus(machine, pricelist, search_term)
         if len(disk_skus) != 1:
-            logging.error(f"Expected 1 sku for disk, got {len(disk_skus)}")
-            logging.error(f"Skus: {disk_skus}")
-            raise ValueError(f"Expected 1 sku for disk, got {len(disk_skus)}")
+            raise ValueError(
+                f"Expected 1 sku for disk, got {len(disk_skus)}, Skus: {disk_skus}"
+            )
 
         # Disk prices are per month, need to convert to hourly, 730 hours in a month
         disk_price_gb_nanodollars = get_price_from_sku(disk_skus[0]) / 730
