@@ -1,0 +1,299 @@
+[
+  {
+    "skuId": "0AC7-3372-0774",
+    "description": "Hyperdisk ML Capacity in Iowa",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "SSD",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 80000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "A29F-0E9D-FF6A",
+    "description": "Hyperdisk Balanced High Availability Capacity in Iowa",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "SSD",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 160000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0FE3-CAB9-E7E3",
+    "description": "Regional Balanced PD Capacity",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "SSD",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-central2",
+      "asia-east1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 200000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "5A5C-DF65-5472",
+    "description": "Hyperdisk Balanced Throughput Confidential Mode in Iowa",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "SSD",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 8000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "05A0-FF55-0F9B",
+    "description": "Hyperdisk Balanced Storage Pools Advanced Capacity - Iowa",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "HDBSP",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 140000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0086-8707-C3B1",
+    "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Network",
+      "resourceGroup": "InterregionEgress",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "australia-southeast2"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 0
+              }
+            },
+            {
+              "startUsageAmount": 1,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 100000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0227-3116-EA8A",
+    "description": "Spot Preemptible H3 Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "Preemptible"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 1243200
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0001-FC8F-A9AF",
+    "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "Preemptible"
+    },
+    "serviceRegions": [
+      "europe-west9"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 9198000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "D973-5D65-BAB2",
+    "description": "Storage PD Capacity",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "PDStandard",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 0
+              }
+            },
+            {
+              "startUsageAmount": 30,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 40000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "B188-61DD-52E4",
+    "description": "SSD backed PD Capacity",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Storage",
+      "resourceGroup": "SSD",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 170000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

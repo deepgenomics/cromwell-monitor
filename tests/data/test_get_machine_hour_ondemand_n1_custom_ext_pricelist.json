@@ -1,0 +1,182 @@
+[
+  {
+    "skuId": "51E2-59BD-7A6E",
+    "description": "Custom Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 4446000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0086-8707-C3B1",
+    "description": "Network Inter Region Data Transfer Out from Americas to Melbourne",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Network",
+      "resourceGroup": "InterregionEgress",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 0
+              }
+            },
+            {
+              "startUsageAmount": 1,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 100000000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0227-3116-EA8A",
+    "description": "Spot Preemptible H3 Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "Preemptible"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 1243200
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "0001-FC8F-A9AF",
+    "description": "Spot Preemptible E2 Custom Instance Core running in Paris",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "Preemptible"
+    },
+    "serviceRegions": [
+      "europe-west9"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 9198000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "ACBC-6999-A1C4",
+    "description": "Custom Instance Core running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "CPU",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 33191550
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "skuId": "972B-1B48-9D16",
+    "description": "Custom Extended Instance Ram running in Americas",
+    "category": {
+      "serviceDisplayName": "Compute Engine",
+      "resourceFamily": "Compute",
+      "resourceGroup": "RAM",
+      "usageType": "OnDemand"
+    },
+    "serviceRegions": [
+      "us-central1",
+      "us-west1"
+    ],
+    "pricingInfo": [
+      {
+        "pricingExpression": {
+          "tieredRates": [
+            {
+              "startUsageAmount": 0,
+              "unitPrice": {
+                "units": "0",
+                "nanos": 9550000
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]
