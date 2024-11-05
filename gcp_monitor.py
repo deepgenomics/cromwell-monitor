@@ -53,7 +53,7 @@ def initialize_gcp_variables(
     # Get billing rates if pricing data is available
     if pricing_available:
         try:
-            gcp_variables["COST_PER_SEC"] = (
+            gcp_variables["COST_PER_SEC_NANODOLLARS"] = (
                 get_machine_hour(gcp_variables["MACHINE"], services_pricelist)
                 + get_disk_hour(gcp_variables["MACHINE"], services_pricelist)
             ) / 3600
@@ -293,29 +293,30 @@ def get_price_key(key, preemptible):
 
 
 def get_price_from_sku(sku: dict) -> tuple[int, float]:
-    # Pricing api splits the price into units and nanos.
-    # Units are whole dollars, nanos are cents but represented as nanos of a dollar
-    dollars_price = int(
+    # Pricing api splits the price into whole dollars (units) and nano dollars (nanos).
+    # We will return a combined nanodollars price. Conversion back to dollars is done
+    # when the metric is submitted
+    units_price = int(
         sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
             "units"
         ]
+    ) * (10**9)
+    nanos_price = int(
+        sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
+            "nanos"
+        ]
     )
-    cents_price = sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1][
-        "unitPrice"
-    ]["nanos"] / (10**9)
-    return dollars_price, cents_price
+    return units_price + nanos_price
 
 
 def get_machine_hour(machine, pricelist):
     machine_name_segments = machine["type"].split("-")
     machine_prefix = machine_name_segments[0].upper()
     # n1 custom machine api responses differ from other machine families
-    machine_is_n1_custom = True if machine_prefix == "CUSTOM" else False
+    machine_is_n1_custom = machine_prefix == "CUSTOM"
     # standard, custom, highmem, highcpu, etc.
-    machine_is_custom = True if machine_name_segments[1] == "custom" else False
-    machine_is_extended_memory: bool = (
-        True if machine_name_segments[-1] == "ext" else False
-    )
+    machine_is_custom = machine_name_segments[1] == "custom"
+    machine_is_extended_memory: bool = "ext" == machine_name_segments[-1]
     usage_type = "Preemptible" if machine["preemptible"] else "OnDemand"
     num_cpus: int | None = os.cpu_count()
     if num_cpus is None:
@@ -351,14 +352,14 @@ def get_machine_hour(machine, pricelist):
         logging.error(f"Skus: {gpu_skus}")
         raise ValueError(f"Expected 1 sku for GPU, got {len(gpu_skus)}")
 
-    cpu_dollars_price, cpu_cents_price = get_price_from_sku(cpu_skus[0])
-    cpu_price_per_hr = (cpu_dollars_price + cpu_cents_price) * num_cpus
-    ram_dollars_price, ram_cents_price = get_price_from_sku(memory_skus[0])
-    ram_price_per_hr = (ram_dollars_price + ram_cents_price) * num_ram_gb
+    cpu_nanodollars_price = get_price_from_sku(cpu_skus[0])
+    cpu_price_per_hr = cpu_nanodollars_price * num_cpus
+    ram_nanodollars_price = get_price_from_sku(memory_skus[0])
+    ram_price_per_hr = ram_nanodollars_price * num_ram_gb
 
     if num_gpus > 0:
-        gpu_dollars_price, gpu_cents_price = get_price_from_sku(gpu_skus[0])
-        gpu_price_per_hr = (gpu_dollars_price + gpu_cents_price) * num_gpus
+        gpu_nanodollars_price = get_price_from_sku(gpu_skus[0])
+        gpu_price_per_hr = gpu_nanodollars_price * num_gpus
         return cpu_price_per_hr + ram_price_per_hr + gpu_price_per_hr
     else:
         return cpu_price_per_hr + ram_price_per_hr
@@ -385,24 +386,20 @@ def get_cpu_and_mem_skus(
     # Need to concat usage type and custom because just "Custom" will return
     # skus for other machine families (eg. "E2 Custom" vs "Premptible Custom")
     if machine_is_n1_custom and usage_type == "Preemptible":
-
-        def machine_filter(sku):
-            return "Preemptible Custom" in sku["description"]
+        cpu_filters.append(lambda sku: "Preemptible Custom" in sku["description"])
+        memory_filters.append(lambda sku: "Preemptible Custom" in sku["description"])
 
     elif machine_is_n1_custom and usage_type == "OnDemand":
         # Cant use "Custom in description" because it will match other machine families
         # Need to ensure that Custom is the first word in the description to get
         # OnDemand N1 Custom machines
-        def machine_filter(sku):
-            return bool(re.search(r"^Custom ", sku["description"]))
-
+        cpu_filters.append(lambda sku: bool(re.search(r"^Custom ", sku["description"])))
+        memory_filters.append(
+            lambda sku: bool(re.search(r"^Custom ", sku["description"]))
+        )
     else:
-
-        def machine_filter(sku):
-            return machine_prefix in sku["description"]
-
-    cpu_filters.append(lambda sku: machine_filter(sku))
-    memory_filters.append(lambda sku: machine_filter(sku))
+        cpu_filters.append(lambda sku: machine_prefix in sku["description"])
+        memory_filters.append(lambda sku: machine_prefix in sku["description"])
 
     if machine_prefix == "N1":  # N1 Standard machines need different filters
         cpu_filters.append(lambda sku: "Core" in sku["description"])
@@ -458,10 +455,9 @@ _GPU_NAME_FROM_TYPE = MappingProxyType(
 def get_gpu_skus(num_gpus, gpu_type, machine, pricelist, usage_type):
     if num_gpus == 0:
         return []
-    gpu_filters: List[Callable[[dict], bool]] = []
     if gpu_type not in _GPU_NAME_FROM_TYPE:
         raise ValueError(f"Unknown GPU type: {gpu_type}")
-
+    gpu_filters: List[Callable[[dict], bool]] = []
     gpu_filters.append(lambda sku: "GPU" in sku["category"]["resourceGroup"])
     gpu_filters.append(lambda sku: machine["region"] in sku["serviceRegions"])
     gpu_filters.append(
@@ -501,12 +497,12 @@ def get_disk_hour(machine, pricelist):
             logging.error(f"Skus: {disk_skus}")
             raise ValueError(f"Expected 1 sku for disk, got {len(disk_skus)}")
 
-        disk_price_gb_dollars, disk_price_gb_cents = get_price_from_sku(disk_skus[0])
         # Disk prices are per month, need to convert to hourly, 730 hours in a month
-        disk_price_gb = (disk_price_gb_dollars + disk_price_gb_cents) / 730
-        price = disk_price_gb * disk["sizeGb"]
+        disk_price_gb_nanodollars = get_price_from_sku(disk_skus[0]) / 730
+        price = disk_price_gb_nanodollars * disk["sizeGb"]
         total += price
-    return total
+    # Casting to int is a reasonable compromise to avoid weird floating point errors
+    return int(total)
 
 
 def get_disk_skus(machine: dict, pricelist: List[dict], search_term: str) -> List[dict]:
@@ -684,7 +680,7 @@ def report(
                 gcp_variables["COST_ESTIMATE_METRIC"],
                 {
                     "double_value": (time() - ps.boot_time())
-                    * gcp_variables["COST_PER_SEC"]
+                    * (gcp_variables["COST_PER_SEC_NANODOLLARS"] / 10**9)
                 },
             )
         ]

@@ -344,17 +344,20 @@ def get_services_pricelist(filepath: str) -> List[dict]:
         return json.load(f)
 
 
-def get_units_and_nanos(sku_id: str, pricelist: List[dict]) -> tuple[int, int]:
-    sku = [sku for sku in pricelist if sku_id in sku["skuId"]][0]
-    units = int(
-        sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
-            "units"
-        ]
+def get_nanodollar_price(sku_id: str, pricelist: List[dict]) -> tuple[int, int]:
+    sku = next(sku for sku in pricelist if sku_id in sku["skuId"])
+    units = (
+        int(
+            sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
+                "units"
+            ]
+        )
+        * 10**9
     )
     nanos = sku["pricingInfo"][0]["pricingExpression"]["tieredRates"][-1]["unitPrice"][
         "nanos"
     ]
-    return units, nanos
+    return units + nanos
 
 
 def test_get_machine_hour_n1_standard():
@@ -375,13 +378,13 @@ def test_get_machine_hour_n1_standard():
         "tests/data/test_get_machine_hour_n1_standard_pricelist.json"
     )
     ram_sku_id = "5451-0A15-0123"
-    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    ram_nanodollar_price = get_nanodollar_price(ram_sku_id, pricelist)
     cpu_sku_id = "D498-1ECA-87C1"
-    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
+    cpu_nanodollar_price = get_nanodollar_price(cpu_sku_id, pricelist)
     num_ram_gb = 7.5
-    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = ram_nanodollar_price * num_ram_gb
     num_cpus = 2
-    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    cpu_cost_hr = cpu_nanodollar_price * num_cpus
     with patch("os.cpu_count", return_value=num_cpus), patch(
         "psutil.virtual_memory"
     ) as mock_virtual_memory:
@@ -410,13 +413,13 @@ def test_get_machine_hour_ondemand_n1_custom_ext():
         "tests/data/test_get_machine_hour_ondemand_n1_custom_ext_pricelist.json"
     )
     ram_sku = "972B-1B48-9D16"
-    ram_units, ram_nanos = get_units_and_nanos(ram_sku, pricelist)
+    ram_nanodollar_price = get_nanodollar_price(ram_sku, pricelist)
     cpu_sku = "ACBC-6999-A1C4"
-    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku, pricelist)
+    cpu_nanodollar_price = get_nanodollar_price(cpu_sku, pricelist)
     num_ram_gb = 4
-    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = ram_nanodollar_price * num_ram_gb
     num_cpus = 2
-    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    cpu_cost_hr = cpu_nanodollar_price * num_cpus
     with patch("os.cpu_count", return_value=num_cpus), patch(
         "psutil.virtual_memory"
     ) as mock_virtual_memory:
@@ -445,13 +448,13 @@ def test_get_machine_hour_preemptible_n1_custom_ext():
         "tests/data/test_get_machine_hour_preemptible_n1_custom_ext_pricelist.json"
     )
     ram_sku_id = "C1E6-3CA5-CE59"
-    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    ram_nanodollar_price = get_nanodollar_price(ram_sku_id, pricelist)
     cpu_sku_id = "4A30-9DBE-ECEA"
-    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
+    cpu_nanodollar_price = get_nanodollar_price(cpu_sku_id, pricelist)
     num_ram_gb = 4
-    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = ram_nanodollar_price * num_ram_gb
     num_cpus = 2
-    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    cpu_cost_hr = cpu_nanodollar_price * num_cpus
     with patch("os.cpu_count", return_value=num_cpus), patch(
         "psutil.virtual_memory"
     ) as mock_virtual_memory:
@@ -480,17 +483,17 @@ def test_get_machine_hour_h100_mega():
         "tests/data/test_get_machine_hour_h100_mega_pricelist.json"
     )
     ram_sku_id = "9A1D-C6C8-D7B9"
-    ram_units, ram_nanos = get_units_and_nanos(ram_sku_id, pricelist)
+    ram_nanodollar_price = get_nanodollar_price(ram_sku_id, pricelist)
     cpu_sku_id = "AEAF-12C5-E41B"
-    cpu_units, cpu_nanos = get_units_and_nanos(cpu_sku_id, pricelist)
+    cpu_nanodollar_price = get_nanodollar_price(cpu_sku_id, pricelist)
     num_ram_gb = 1872
-    ram_cost_hr = (ram_units + (ram_nanos / (10**9))) * num_ram_gb
+    ram_cost_hr = ram_nanodollar_price * num_ram_gb
     num_cpus = 208
-    cpu_cost_hr = (cpu_units + (cpu_nanos / (10**9))) * num_cpus
+    cpu_cost_hr = cpu_nanodollar_price * num_cpus
     gpu_sku_id = "8609-4BAD-F240"
-    gpu_units, gpu_nanos = get_units_and_nanos(gpu_sku_id, pricelist)
+    gpu_nanodollar_price = get_nanodollar_price(gpu_sku_id, pricelist)
     num_gpus = 8
-    gpu_cost_hr = (gpu_units + (gpu_nanos / (10**9))) * num_gpus
+    gpu_cost_hr = gpu_nanodollar_price * num_gpus
     with patch("os.cpu_count", return_value=num_cpus), patch(
         "psutil.virtual_memory"
     ) as mock_virtual_memory:
@@ -603,19 +606,14 @@ def test_get_disk_hour():
     pricelist = get_services_pricelist("tests/data/test_get_disk_hour_pricelist.json")
     actual = get_disk_hour(pd_standard_machine, pricelist)
     disk_standard_sku_id = "D973-5D65-BAB2"
-    disk_standard_units, disk_standard_nanos = get_units_and_nanos(
-        disk_standard_sku_id, pricelist
-    )
+    disk_standard_nandollars = get_nanodollar_price(disk_standard_sku_id, pricelist)
     num_disk_standard_gb = 20
-    disk_standard_cost_hr = (
-        (disk_standard_units + (disk_standard_nanos / (10**9))) / 730
-    ) * num_disk_standard_gb  # disk price is per month, 730 hrs in a month
+    # disk price is per month, 730 hrs in a month
+    disk_standard_cost_hr = int((disk_standard_nandollars / 730) * num_disk_standard_gb)
     disk_ssd_sku_id = "B188-61DD-52E4"
-    disk_ssd_units, disk_ssd_nanos = get_units_and_nanos(disk_ssd_sku_id, pricelist)
+    disk_ssd_nanodollars = get_nanodollar_price(disk_ssd_sku_id, pricelist)
     num_disk_ssd_gb = 30
-    disk_ssd_cost_hr = (
-        (disk_ssd_units + (disk_ssd_nanos / (10**9))) / 730
-    ) * num_disk_ssd_gb
+    disk_ssd_cost_hr = int((disk_ssd_nanodollars / 730) * num_disk_ssd_gb)
     assert actual == disk_standard_cost_hr + disk_ssd_cost_hr
 
 
